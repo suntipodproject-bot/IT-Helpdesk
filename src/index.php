@@ -56,6 +56,10 @@ header('Content-Type: text/html; charset=utf-8');
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Tom Select -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
     <!-- Tailwind Config & Custom CSS Variables -->
     <script>
         tailwind.config = {
@@ -249,6 +253,38 @@ header('Content-Type: text/html; charset=utf-8');
             flex: 1;
             overflow-y: auto;
             padding-bottom: 2rem;
+        }
+        /* Tom Select Dark Theme Overrides */
+        .ts-control {
+            background: rgba(13, 31, 56, 0.7) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            border-radius: 0.5rem !important;
+            color: white !important;
+            padding: 0.625rem 0.75rem 0.625rem 2.5rem !important; /* pl-10 to match icons */
+        }
+        .ts-dropdown {
+            background: #0f2746 !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: white !important;
+        }
+        .ts-dropdown .active {
+            background: #00b4d8 !important;
+            color: white !important;
+        }
+        .ts-dropdown .option {
+            padding: 8px 12px !important;
+        }
+        .ts-control input {
+            color: white !important;
+        }
+        .ts-wrapper.single .ts-control:after {
+            border-color: #94a3b8 transparent transparent transparent !important;
+        }
+        .ts-wrapper.single.input-active .ts-control:after {
+            border-color: transparent transparent #94a3b8 transparent !important;
+        }
+        .ts-wrapper .ts-control {
+            font-size: 0.875rem !important;
         }
     </style>
 </head>
@@ -508,7 +544,7 @@ header('Content-Type: text/html; charset=utf-8');
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ocean-400">
                                             <i class="fa-solid fa-hospital"></i>
                                         </div>
-                                        <select name="department_id" required
+                                        <select name="department_id" id="deptSelect" required
                                             class="dark-input w-full pl-10 pr-3 py-2.5 rounded-lg text-sm appearance-none cursor-pointer">
                                             <option value="" disabled selected>เลือกสถานที่/แผนกของคุณ...</option>
                                             <?php foreach ($departments_list as $dept): ?>
@@ -1076,6 +1112,17 @@ header('Content-Type: text/html; charset=utf-8');
 
         // Initialize first view
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Tom Select
+            new TomSelect("#deptSelect", {
+                create: false,
+                sortField: {
+                    field: "text",
+                    direction: "asc"
+                },
+                placeholder: "พิมพ์ค้นหาหน่วยงาน...",
+                allowEmptyOption: false,
+            });
+
             <?php if ($user['role'] === 'user'): ?>
             switchView('create-ticket');
             <?php else: ?>
