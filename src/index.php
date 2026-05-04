@@ -357,6 +357,12 @@ header('Content-Type: text/html; charset=utf-8');
                         <i class="fa-solid fa-users-gear w-6"></i>
                         <span class="ml-3 hidden md:inline">จัดการผู้ใช้งาน</span>
                     </button>
+                    <button onclick="switchView('departments')"
+                        class="nav-btn w-full flex items-center p-3 rounded-lg text-text-muted hover:text-white hover:bg-ocean-700 transition-colors"
+                        data-target="departments">
+                        <i class="fa-solid fa-building-columns w-6"></i>
+                        <span class="ml-3 hidden md:inline">จัดการแผนก</span>
+                    </button>
                     <?php endif; ?>
                 </nav>
             </div>
@@ -927,6 +933,67 @@ header('Content-Type: text/html; charset=utf-8');
                 <?php endif; ?>
 
                 <!-- ========================================== -->
+                <!-- VIEW: DEPARTMENT MANAGEMENT (Admin Only) -->
+                <!-- ========================================== -->
+                <?php if ($user['role'] === 'admin'): ?>
+                <section id="view-departments" class="view-section hidden space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white mb-1">จัดการแผนก/หน่วยงาน</h2>
+                            <p class="text-text-muted text-sm">เพิ่มหรือแก้ไขรายชื่อแผนกภายในโรงพยาบาล</p>
+                        </div>
+                        <button onclick="openAddDeptModal()"
+                            class="bg-ocean-500 hover:bg-ocean-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-[0_0_15px_rgba(0,180,216,0.3)] flex items-center gap-2">
+                            <i class="fa-solid fa-plus-circle"></i> เพิ่มแผนกใหม่
+                        </button>
+                    </div>
+
+                    <div class="glass-card overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-ocean-800 text-text-muted text-xs uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-6 py-4 font-semibold">ชื่อแผนก (ภาษาไทย)</th>
+                                        <th class="px-6 py-4 font-semibold text-center">ข้อมูลสมาชิก</th>
+                                        <th class="px-6 py-4 font-semibold text-right">ดำเนินการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dept-table-body" class="divide-y divide-white/5">
+                                    <!-- Loaded via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Modal: Add/Edit Department -->
+                <div id="deptModal" class="fixed inset-0 z-50 hidden overflow-y-auto">
+                    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+                        <div class="fixed inset-0 transition-opacity bg-black/60 backdrop-blur-sm" onclick="closeDeptModal()"></div>
+                        <div class="inline-block overflow-hidden text-left align-bottom transition-all transform glass-card sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                            <div class="px-6 py-4 border-b border-white/10 flex justify-between items-center">
+                                <h3 class="text-lg font-bold text-white" id="deptModalTitle">เพิ่มแผนกใหม่</h3>
+                                <button onclick="closeDeptModal()" class="text-text-muted hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <form id="deptForm" onsubmit="handleDeptSubmit(event)" class="p-6 space-y-4">
+                                <input type="hidden" id="dept_id" name="id">
+                                <div>
+                                    <label class="text-sm font-medium text-text-muted block mb-1">ชื่อแผนก <span class="text-red-400">*</span></label>
+                                    <input type="text" id="dept_name" name="dept_name" required
+                                        class="dark-input w-full px-3 py-2 rounded-lg text-sm"
+                                        placeholder="เช่น แผนกผู้ป่วยนอก (OPD)">
+                                </div>
+                                <div class="pt-4 flex gap-3">
+                                    <button type="button" onclick="closeDeptModal()" class="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors">ยกเลิก</button>
+                                    <button type="submit" class="flex-1 px-4 py-2 bg-ocean-600 hover:bg-ocean-500 text-white rounded-lg transition-colors font-bold">บันทึกข้อมูล</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- ========================================== -->
                 <!-- VIEW 6: MY JOBS (Staff/Admin Only) -->
                 <!-- ========================================== -->
                 <?php if ($user['role'] !== 'user'): ?>
@@ -948,12 +1015,18 @@ header('Content-Type: text/html; charset=utf-8');
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
                         <div>
                             <h2 class="text-2xl font-bold text-white mb-1">จัดการครุภัณฑ์ไอที</h2>
-                            <p class="text-text-muted text-sm">ค้นหาสเปกอุปกรณ์และประวัติการซ่อมเพื่อวิเคราะห์การแทงจำหน่าย</p>
+                            <p class="text-text-muted text-sm">ตรวจสอบ เพิ่ม แก้ไขข้อมูลครุภัณฑ์ และพิมพ์ QR Code</p>
                         </div>
-                        <a href="print_labels.php" target="_blank"
-                            class="bg-ocean-700 hover:bg-ocean-600 text-white px-4 py-2 rounded-lg text-sm border border-white/10 transition-colors flex items-center gap-2 shadow-lg shadow-ocean-900/20">
-                            <i class="fa-solid fa-qrcode"></i> พิมพ์สติ๊กเกอร์ QR Code
-                        </a>
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <button onclick="openAddAssetModal()"
+                                class="bg-ocean-500 hover:bg-ocean-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-[0_0_15px_rgba(0,180,216,0.3)] flex items-center gap-2">
+                                <i class="fa-solid fa-plus-circle"></i> เพิ่มครุภัณฑ์ใหม่
+                            </button>
+                            <a href="print_labels.php" target="_blank"
+                                class="bg-ocean-700 hover:bg-ocean-600 text-white px-4 py-2 rounded-lg text-sm border border-white/10 transition-colors flex items-center gap-2">
+                                <i class="fa-solid fa-qrcode"></i> พิมพ์ QR
+                            </a>
+                        </div>
                     </div>
 
                     <div class="glass-card p-6">
@@ -973,6 +1046,37 @@ header('Content-Type: text/html; charset=utf-8');
                                     <i class="fa-solid fa-magnifying-glass"></i> ตรวจสอบ
                                 </button>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- รายชื่อครุภัณฑ์ทั้งหมด -->
+                    <div id="assetListContainer" class="glass-card overflow-hidden">
+                        <div class="px-6 py-4 border-b border-white/5 bg-ocean-800/50 flex justify-between items-center">
+                            <h3 class="text-sm font-bold text-white uppercase tracking-wider">รายการครุภัณฑ์ทั้งหมด</h3>
+                            <span id="asset-count" class="text-xs text-ocean-400">กำลังโหลด...</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-ocean-800 text-text-muted text-[10px] uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-6 py-3 font-semibold">รหัสครุภัณฑ์</th>
+                                        <th class="px-6 py-3 font-semibold">ชื่ออุปกรณ์ / ยี่ห้อ</th>
+                                        <th class="px-6 py-3 font-semibold text-right">ดำเนินการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="asset-table-body" class="divide-y divide-white/5">
+                                    <!-- Loaded via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- รายละเอียดประวัติการซ่อม (จะโชว์เมื่อค้นหาหรือเลือกเครื่อง) -->
+                    <div id="assetHistoryContainer" class="hidden space-y-6">
+                        <div class="flex items-center gap-4 mb-4">
+                            <button onclick="backToAssetList()" class="text-text-muted hover:text-white transition-colors flex items-center">
+                                <i class="fa-solid fa-arrow-left mr-2"></i> กลับหน้ารายการ
+                            </button>
                         </div>
                     </div>
 
@@ -1019,6 +1123,58 @@ header('Content-Type: text/html; charset=utf-8');
 
             </div>
         </main>
+    </div>
+
+    <!-- Modal: Add/Edit Asset -->
+    <div id="assetModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div class="p-6 border-b border-white/10 flex justify-between items-center bg-ocean-800/50">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2" id="assetModalTitle">
+                    <i class="fa-solid fa-server text-ocean-400"></i> เพิ่มครุภัณฑ์ใหม่
+                </h3>
+                <button onclick="closeAssetModal()" class="text-text-muted hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <form id="assetForm" onsubmit="handleAssetSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" name="id" id="asset_id_hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-text-muted">รหัสครุภัณฑ์ <span class="text-red-400">*</span></label>
+                        <input type="text" name="asset_code" id="asset_code_input" required class="dark-input w-full px-3 py-2 rounded-lg text-sm" placeholder="เช่น PC-OPD-001">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-text-muted">ชื่ออุปกรณ์ <span class="text-red-400">*</span></label>
+                        <input type="text" name="asset_name" id="asset_name_input" required class="dark-input w-full px-3 py-2 rounded-lg text-sm" placeholder="เช่น คอมพิวเตอร์ตั้งโต๊ะ">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-text-muted">ยี่ห้อ</label>
+                        <input type="text" name="brand" id="asset_brand_input" class="dark-input w-full px-3 py-2 rounded-lg text-sm" placeholder="เช่น Dell, HP">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-text-muted">รุ่น (Model)</label>
+                        <input type="text" name="model" id="asset_model_input" class="dark-input w-full px-3 py-2 rounded-lg text-sm" placeholder="เช่น Optiplex 7090">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-text-muted">Serial Number</label>
+                        <input type="text" name="serial_number" id="asset_serial_input" class="dark-input w-full px-3 py-2 rounded-lg text-sm" placeholder="S/N">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-text-muted">แผนกที่ดูแล</label>
+                        <select name="department_id" id="asset_dept_input" class="dark-input w-full px-3 py-2 rounded-lg text-sm">
+                            <option value="">-- เลือกแผนก --</option>
+                            <?php foreach ($departments_list as $d): ?>
+                                <option value="<?= $d['id'] ?>"><?= htmlspecialchars($d['dept_name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="button" onclick="closeAssetModal()" class="flex-1 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors">ยกเลิก</button>
+                    <button type="submit" class="flex-1 px-4 py-2 bg-ocean-600 hover:bg-ocean-500 text-white rounded-lg transition-colors font-bold shadow-lg shadow-ocean-900/40">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Modal: Add/Edit User -->
@@ -1173,39 +1329,12 @@ header('Content-Type: text/html; charset=utf-8');
             }
         });
     </script>
-    <!-- Real API Integration -->
+    <!-- Real API Integration (Moved up and fixed path) -->
     <script>
-    window.CURRENT_USER = <?= json_encode($user) ?>;
-    window.IS_ADMIN = <?= $user['role'] === 'admin' ? 'true' : 'false' ?>;
-    window.STAFF_LIST = <?= json_encode($staff_list) ?>;
-    
-    window.deleteTicket = async function(id) {
-        if (!confirm('⚠️ ยืนยันการลบรายการแจ้งซ่อมนี้อย่างถาวร?')) return;
-        
-        try {
-            const res = await fetch('/api/tickets.php', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id })
-            });
-            const json = await res.json();
-            if (json.success) {
-                if (typeof showToast === 'function') showToast('✅ ลบรายการแจ้งซ่อมเรียบร้อยแล้ว');
-                else alert('✅ ลบรายการแจ้งซ่อมเรียบร้อยแล้ว');
-                
-                // รีโหลดรายการถ้าอยู่ในหน้า ticket list
-                if (typeof loadTickets === 'function') loadTickets();
-                else window.location.reload();
-            } else {
-                if (typeof showToast === 'function') showToast('❌ ' + (json.error || 'ไม่สามารถลบได้'), true);
-                else alert('❌ ' + (json.error || 'ไม่สามารถลบได้'));
-            }
-        } catch(e) {
-            if (typeof showToast === 'function') showToast('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ', true);
-            else alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ');
-        }
-    };
+        window.CURRENT_USER = <?= json_encode($user) ?>;
+        window.IS_ADMIN = <?= $user['role'] === 'admin' ? 'true' : 'false' ?>;
+        window.STAFF_LIST = <?= json_encode($staff_list) ?>;
     </script>
-    <script src="/js/app.js?v=<?= time() ?>"></script>
+    <script src="js/app.js?v=<?= time() ?>"></script>
 </body>
 </html>
