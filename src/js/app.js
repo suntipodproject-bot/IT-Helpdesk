@@ -8,18 +8,28 @@ let deptChart, issueChart;
 
 async function loadDashboard() {
     try {
-        const res  = await fetch('/api/dashboard.php');
+        const m = document.getElementById('dash-month').value;
+        const y = document.getElementById('dash-year').value;
+        const res  = await fetch(`/api/dashboard.php?month=${m}&year=${y}`);
         const json = await res.json();
         if (!json.success) return;
         const d = json.data;
 
+        // Update Label
+        const mText = document.getElementById('dash-month').options[document.getElementById('dash-month').selectedIndex].text;
+        const yText = document.getElementById('dash-year').options[document.getElementById('dash-year').selectedIndex].text;
+        setText('dashboard-period-label', `ข้อมูลสรุปประจำเดือน ${mText} ${yText}`);
+
         // Update KPI cards
-        setText('kpi-total',   d.total_month);
-        setText('kpi-pending', d.pending);
-        setText('kpi-done',    d.done_month);
-        setText('kpi-sla',     d.sla_pct + '%');
-        setText('kpi-critical',`วิกฤต: ${d.critical_pending} | เร่งด่วน: ${d.urgent_pending}`);
-        setText('kpi-sla-label', d.sla_pct >= 90 ? 'ซ่อมทันเวลาตามเกณฑ์ ✅' : 'ต่ำกว่าเกณฑ์ ⚠️');
+        setText('stat-total-month', d.total_month);
+        setText('stat-pending', d.pending);
+        setText('stat-pending-detail', `วิกฤต: ${d.critical_pending} | เร่งด่วน: ${d.urgent_pending}`);
+        setText('stat-done-month', d.done_month);
+        
+        const successRate = d.total_month > 0 ? Math.round((d.done_month / d.total_month) * 100) : 0;
+        setText('stat-done-pct', `อัตราความสำเร็จ ${successRate}%`);
+        
+        setText('stat-sla-pct', d.sla_pct + '%');
 
         // Rebuild charts with real data
         renderCharts(d.chart_dept, d.chart_priority);
@@ -78,7 +88,7 @@ function renderCharts(deptData, priorityData) {
         type: 'doughnut',
         data: {
             labels: priorityData.map(r => {
-                const map = { critical: '🔴 วิกฤต', urgent: '🟠 เร่งด่วน', normal: '🟢 ปกติ' };
+                const map = { critical: 'วิกฤต', urgent: 'เร่งด่วน', normal: 'ปกติ' };
                 return map[r.label] || r.label;
             }),
             datasets: [{ 
@@ -240,6 +250,16 @@ async function assignTicket(id, assigned_to) {
     loadTickets();
 }
 
+// ---- Search Feature ----
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('ticketSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', debounce((e) => {
+            loadTickets({ search: e.target.value });
+        }, 500));
+    }
+});
+
 
 
 // ---- Create Ticket Form ----
@@ -391,6 +411,14 @@ document.addEventListener('DOMContentLoaded', () => {
 // ---- Helpers ----
 function setText(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; }
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function debounce(func, timeout = 300) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => { func.apply(this, args); }, timeout);
+    };
+}
 
 window.showToast = function(msg, isError = false) {
     const toast = document.getElementById('toast');

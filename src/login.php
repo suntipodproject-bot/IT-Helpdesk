@@ -178,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <p class="text-center text-slate-600 text-xs mt-6">
-            <?= APP_NAME ?> v<?= APP_VERSION ?> · กลุ่มงานสุขภาพดิจิทัล
+            <?= APP_NAME ?> v<?= APP_VERSION ?> · กลุ่มงานสุขภาพดิจิทัล โรงพยาบาลสนามชัยเขต
         </p>
     </div>
 

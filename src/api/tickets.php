@@ -27,9 +27,9 @@ if ($method === 'GET') {
         $params[] = $_GET['priority'];
     }
     if (!empty($_GET['search'])) {
-        $where[]  = '(t.ticket_no LIKE ? OR t.reporter_name LIKE ? OR t.description LIKE ?)';
+        $where[]  = '(t.ticket_no LIKE ? OR t.reporter_name LIKE ? OR t.problem_description LIKE ? OR d.dept_name LIKE ?)';
         $q        = '%' . $_GET['search'] . '%';
-        $params   = array_merge($params, [$q, $q, $q]);
+        $params   = array_merge($params, [$q, $q, $q, $q]);
     }
 
     if (!empty($_GET['assigned_to'])) {

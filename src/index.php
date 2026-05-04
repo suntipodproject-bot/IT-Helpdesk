@@ -401,10 +401,31 @@ header('Content-Type: text/html; charset=utf-8');
                 <!-- VIEW 1: DASHBOARD -->
                 <!-- ========================================== -->
                 <section id="view-dashboard" class="view-section <?= $user['role'] !== 'user' ? 'active' : 'hidden' ?> space-y-6">
-                    <div class="flex justify-between items-end mb-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
                         <div>
                             <h2 class="text-2xl font-bold text-white mb-1">ภาพรวมระบบแจ้งซ่อม</h2>
-                            <p class="text-text-muted text-sm">ข้อมูลสรุปประจำเดือน พฤษภาคม 2026</p>
+                            <div class="flex items-center gap-3 mt-1">
+                                <p class="text-text-muted text-sm" id="dashboard-period-label">ข้อมูลสรุปประจำเดือนนี้</p>
+                                <div class="flex gap-2">
+                                    <select id="dash-month" onchange="loadDashboard()" class="bg-ocean-800 border border-white/10 text-white text-[10px] rounded px-2 py-1 outline-none focus:border-ocean-500">
+                                        <?php 
+                                        $months = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+                                        foreach($months as $i => $m) {
+                                            $selected = ($i + 1 == date('m')) ? 'selected' : '';
+                                            echo "<option value='".($i+1)."' $selected>$m</option>";
+                                        }
+                                        ?>
+                                    </select>
+                                    <select id="dash-year" onchange="loadDashboard()" class="bg-ocean-800 border border-white/10 text-white text-[10px] rounded px-2 py-1 outline-none focus:border-ocean-500">
+                                        <?php 
+                                        $year = date('Y');
+                                        for($y = $year; $y >= $year-2; $y--) {
+                                            echo "<option value='$y'>".($y+543)."</option>";
+                                        }
+                                        ?>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
                         <a href="/api/export.php"
                             class="bg-ocean-700 hover:bg-ocean-600 text-white px-4 py-2 rounded-lg text-sm border border-white/10 transition-colors flex items-center gap-2">
@@ -418,50 +439,49 @@ header('Content-Type: text/html; charset=utf-8');
                             <div class="flex justify-between items-start">
                                 <div>
                                     <p class="text-text-muted text-sm font-medium mb-1">งานทั้งหมด (เดือนนี้)</p>
-                                    <h3 class="text-3xl font-bold text-white">142</h3>
+                                    <h3 class="text-3xl font-bold text-white" id="stat-total-month">0</h3>
                                 </div>
                                 <div
                                     class="w-10 h-10 rounded-lg bg-ocean-500/20 flex items-center justify-center text-ocean-400">
                                     <i class="fa-solid fa-ticket"></i>
                                 </div>
                             </div>
-                            <p class="text-xs text-status-normal mt-3"><i class="fa-solid fa-arrow-up mr-1"></i> 12%
-                                จากเดือนที่แล้ว</p>
+                            <p class="text-xs text-status-normal mt-3" id="stat-total-trend">ยอดรวมในเดือนนี้</p>
                         </div>
 
                         <div class="glass-card p-5 border-l-4 border-l-status-urgent">
                             <div class="flex justify-between items-start">
                                 <div>
                                     <p class="text-text-muted text-sm font-medium mb-1">รอดำเนินการ</p>
-                                    <h3 class="text-3xl font-bold text-white">12</h3>
+                                    <h3 class="text-3xl font-bold text-white" id="stat-pending">0</h3>
                                 </div>
                                 <div
                                     class="w-10 h-10 rounded-lg bg-status-urgent/20 flex items-center justify-center text-status-urgent">
                                     <i class="fa-solid fa-clock"></i>
                                 </div>
                             </div>
-                            <p class="text-xs text-text-muted mt-3">วิกฤต: 2 | เร่งด่วน: 4</p>
+                            <p class="text-xs text-text-muted mt-3" id="stat-pending-detail">วิกฤต: 0 | เร่งด่วน: 0</p>
                         </div>
 
                         <div class="glass-card p-5 border-l-4 border-l-status-completed">
                             <div class="flex justify-between items-start">
                                 <div>
                                     <p class="text-text-muted text-sm font-medium mb-1">ซ่อมเสร็จสิ้น</p>
-                                    <h3 class="text-3xl font-bold text-white">125</h3>
+                                    <h3 class="text-3xl font-bold text-white" id="stat-done-month">0</h3>
                                 </div>
                                 <div
                                     class="w-10 h-10 rounded-lg bg-status-completed/20 flex items-center justify-center text-status-completed">
                                     <i class="fa-solid fa-check-circle"></i>
                                 </div>
                             </div>
-                            <p class="text-xs text-text-muted mt-3">อัตราความสำเร็จ 88%</p>
+                            <p class="text-xs text-text-muted mt-3" id="stat-done-pct">รอข้อมูล...</p>
                         </div>
 
                         <div class="glass-card p-5 border-l-4 border-l-status-normal">
                             <div class="flex justify-between items-start">
                                 <div>
                                     <p class="text-text-muted text-sm font-medium mb-1">SLA Achievement</p>
-                                    <h3 class="text-3xl font-bold text-white">94%</h3>
+                                    <h3 class="text-3xl font-bold text-white" id="stat-sla-pct">0%</h3>
                                 </div>
                                 <div
                                     class="w-10 h-10 rounded-lg bg-status-normal/20 flex items-center justify-center text-status-normal">
@@ -658,7 +678,8 @@ header('Content-Type: text/html; charset=utf-8');
                                     class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
                                     <i class="fa-solid fa-search"></i>
                                 </div>
-                                <input type="text" class="dark-input w-full pl-10 pr-3 py-2 rounded-lg text-sm"
+                                <input type="text" id="ticketSearchInput"
+                                    class="dark-input w-full pl-10 pr-3 py-2 rounded-lg text-sm"
                                     placeholder="ค้นหาเลขที่, อาการ...">
                             </div>
                             <button
