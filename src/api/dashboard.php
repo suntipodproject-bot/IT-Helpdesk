@@ -29,11 +29,11 @@ $stats['critical_pending'] = (int)$stmt->fetchColumn();
 $stmt = $db->query("SELECT COUNT(*) FROM tickets WHERE status='pending' AND priority='urgent'");
 $stats['urgent_pending'] = (int)$stmt->fetchColumn();
 
-// Done this month
-$stmt = $db->query("SELECT COUNT(*) FROM tickets WHERE status='done' AND MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())");
+// Done this month (Completed)
+$stmt = $db->query("SELECT COUNT(*) FROM tickets WHERE status='completed' AND MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())");
 $stats['done_month'] = (int)$stmt->fetchColumn();
 
-// SLA Achievement (done within 24h = normal, 2h = urgent, 1h = critical)
+// SLA Achievement (completed within 24h = normal, 2h = urgent, 1h = critical)
 $stmt = $db->query("
     SELECT
         SUM(CASE
@@ -43,17 +43,18 @@ $stmt = $db->query("
             ELSE 0
         END) AS on_time,
         COUNT(*) AS total
-    FROM tickets WHERE status='done' AND closed_at IS NOT NULL
+    FROM tickets WHERE status='completed' AND closed_at IS NOT NULL
 ");
 $sla = $stmt->fetch();
 $stats['sla_pct'] = $sla['total'] > 0 ? round(($sla['on_time'] / $sla['total']) * 100) : 100;
 
-// --- Chart: Tickets by Location (Room/Dept) ---
+// --- Chart: Tickets by Department ---
 $stmt = $db->query("
-    SELECT COALESCE(location_room, 'ไม่ระบุ') AS label, COUNT(*) AS value
-    FROM tickets
-    WHERE MONTH(created_at)=MONTH(NOW()) AND YEAR(created_at)=YEAR(NOW())
-    GROUP BY location_room
+    SELECT d.dept_name AS label, COUNT(t.id) AS value
+    FROM department d
+    INNER JOIN tickets t ON d.id = t.department_id
+    WHERE MONTH(t.created_at)=MONTH(NOW()) AND YEAR(t.created_at)=YEAR(NOW())
+    GROUP BY d.id
     ORDER BY value DESC
     LIMIT 6
 ");

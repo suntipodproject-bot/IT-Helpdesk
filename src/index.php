@@ -406,10 +406,10 @@ header('Content-Type: text/html; charset=utf-8');
                             <h2 class="text-2xl font-bold text-white mb-1">ภาพรวมระบบแจ้งซ่อม</h2>
                             <p class="text-text-muted text-sm">ข้อมูลสรุปประจำเดือน พฤษภาคม 2026</p>
                         </div>
-                        <button
+                        <a href="/api/export.php"
                             class="bg-ocean-700 hover:bg-ocean-600 text-white px-4 py-2 rounded-lg text-sm border border-white/10 transition-colors flex items-center gap-2">
                             <i class="fa-solid fa-download"></i> Export Excel
-                        </button>
+                        </a>
                     </div>
 
                     <!-- Stat Cards -->
@@ -481,7 +481,7 @@ header('Content-Type: text/html; charset=utf-8');
                             </div>
                         </div>
                         <div class="glass-card p-5">
-                            <h3 class="text-lg font-semibold text-white mb-4">สัดส่วนอาการเสียยอดฮิต</h3>
+                            <h3 class="text-lg font-semibold text-white mb-4">สัดส่วนอาการเสีย</h3>
                             <div class="h-64 w-full relative flex justify-center">
                                 <canvas id="issueChart"></canvas>
                             </div>
