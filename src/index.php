@@ -504,17 +504,29 @@ header('Content-Type: text/html; charset=utf-8');
 
                                 <!-- ผู้แจ้ง -->
                                 <div class="space-y-2">
-                                    <label class="text-sm font-medium text-text-muted block">ชื่อผู้แจ้ง / เบอร์ติดต่อ
-                                        <span class="text-status-critical">*</span></label>
+                                    <label class="text-sm font-medium text-text-muted block">ชื่อผู้แจ้ง <span class="text-status-critical">*</span></label>
                                     <div class="relative">
-                                        <div
-                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ocean-400">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ocean-400">
                                             <i class="fa-solid fa-user"></i>
                                         </div>
                                         <input type="text" name="reporter_name" required
                                             class="dark-input w-full pl-10 pr-3 py-2.5 rounded-lg text-sm"
                                             value="<?= htmlspecialchars($user['full_name']) ?>"
-                                            placeholder="ชื่อผู้แจ้ง (เบอร์โทรติดต่อ)">
+                                            placeholder="ระบุชื่อ-นามสกุล">
+                                    </div>
+                                </div>
+
+                                <!-- เบอร์ติดต่อ -->
+                                <div class="space-y-2">
+                                    <label class="text-sm font-medium text-text-muted block">เบอร์ติดต่อกลับ <span class="text-status-critical">*</span></label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ocean-400">
+                                            <i class="fa-solid fa-phone"></i>
+                                        </div>
+                                        <input type="text" name="reporter_phone" required
+                                            class="dark-input w-full pl-10 pr-3 py-2.5 rounded-lg text-sm"
+                                            value="<?= htmlspecialchars($user['phone'] ?? '') ?>"
+                                            placeholder="ระบุเบอร์ภายในหรือเบอร์ส่วนตัว">
                                     </div>
                                 </div>
 
