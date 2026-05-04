@@ -105,7 +105,8 @@ if ($method === 'POST') {
         $newId = $db->lastInsertId();
 
         // Notification
-        $msg = "👤 ผู้แจ้ง: {$data['reporter_name']}" . (!empty($data['reporter_phone']) ? " ({$data['reporter_phone']})" : '') . "\n";
+        $msg = "👤 ผู้แจ้ง: {$data['reporter_name']}\n";
+        $msg .= "📱 เบอร์: " . ($data['reporter_phone'] ?? '-') . "\n";
         $dept_stmt = $db->prepare("SELECT dept_name FROM department WHERE id = ?");
         $dept_stmt->execute([$data['department_id']]);
         $deptName = $dept_stmt->fetchColumn();

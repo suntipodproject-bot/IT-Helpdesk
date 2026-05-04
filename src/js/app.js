@@ -110,7 +110,8 @@ async function loadTickets(filters = {}) {
             </div>
             ${window.IS_ADMIN ? `<button type="button" onclick="deleteTicket(${t.id})" class="absolute top-2 right-2 text-text-muted hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 p-1" title="ลบรายการ"><i class="fa-solid fa-trash-can"></i></button>` : ''}
             <div class="space-y-1 text-xs text-text-muted mb-3">
-                <p><i class="fa-solid fa-user w-4 text-center"></i> ${escHtml(t.reporter_name)} ${t.reporter_phone?'('+escHtml(t.reporter_phone)+')':''}</p>
+                <p><i class="fa-solid fa-user w-4 text-center"></i> ${escHtml(t.reporter_name)}</p>
+                <p><i class="fa-solid fa-phone w-4 text-center"></i> ${escHtml(t.reporter_phone || '-')}</p>
                 ${t.location_room?`<p><i class="fa-solid fa-location-dot w-4 text-center"></i> ${escHtml(t.location_room)}</p>`:''}
                 ${t.asset_name?`<p><i class="fa-solid fa-desktop w-4 text-center"></i> ${escHtml(t.asset_name)} ${t.asset_model?'('+escHtml(t.asset_model)+')':''}</p>`:''}
                 <p><i class="fa-solid fa-clock w-4 text-center"></i> ${timeAgo(t.created_at)}</p>
