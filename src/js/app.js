@@ -35,27 +35,85 @@ function renderCharts(deptData, priorityData) {
     if (issueChart) issueChart.destroy();
 
     const ctxDept = document.getElementById('deptChart').getContext('2d');
+    const gradBlue = ctxDept.createLinearGradient(0, 0, 0, 300);
+    gradBlue.addColorStop(0, '#00d2ff');
+    gradBlue.addColorStop(1, '#3a7bd5');
+
     deptChart = new Chart(ctxDept, {
         type: 'bar',
         data: {
             labels: deptData.map(r => r.label),
-            datasets: [{ label: 'จำนวนแจ้งซ่อม', data: deptData.map(r => r.value),
-                backgroundColor: '#00b4d8', borderRadius: 4, barPercentage: 0.6 }]
+            datasets: [{ 
+                label: 'จำนวนแจ้งซ่อม', 
+                data: deptData.map(r => r.value),
+                backgroundColor: gradBlue,
+                borderRadius: 8,
+                barPercentage: 0.5,
+                hoverBackgroundColor: '#00d2ff'
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleFont: { size: 13 },
+                    bodyFont: { size: 12 },
+                    padding: 10,
+                    cornerRadius: 8,
+                    displayColors: false
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, grid: { display: true } },
+                x: { grid: { display: false } }
+            }
+        }
     });
 
-    const PRIORITY_LABEL = { critical: '🔴 วิกฤต', urgent: '🟠 เร่งด่วน', normal: '🟢 ปกติ' };
     const ctxIssue = document.getElementById('issueChart').getContext('2d');
     issueChart = new Chart(ctxIssue, {
         type: 'doughnut',
         data: {
-            labels: priorityData.map(r => PRIORITY_LABEL[r.label] || r.label),
-            datasets: [{ data: priorityData.map(r => r.value),
-                backgroundColor: ['#ff4d4d','#ff9f43','#2ed573'], borderWidth: 0, hoverOffset: 4 }]
+            labels: priorityData.map(r => {
+                const map = { critical: '🔴 วิกฤต', urgent: '🟠 เร่งด่วน', normal: '🟢 ปกติ' };
+                return map[r.label] || r.label;
+            }),
+            datasets: [{ 
+                data: priorityData.map(r => r.value),
+                backgroundColor: [
+                    '#ff4d4d', // Critical
+                    '#fb923c', // Urgent
+                    '#22c55e'  // Normal
+                ],
+                borderWidth: 0,
+                hoverOffset: 15,
+                weight: 0.5
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '70%',
-            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } } }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            cutout: '75%',
+            plugins: { 
+                legend: { 
+                    position: 'bottom', 
+                    labels: { 
+                        boxWidth: 12, 
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    } 
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            }
+        }
     });
     chartsRendered = true;
 }
@@ -113,7 +171,7 @@ async function loadTickets(filters = {}) {
                 <p><i class="fa-solid fa-user w-4 text-center"></i> ${escHtml(t.reporter_name)}</p>
                 <p><i class="fa-solid fa-phone w-4 text-center"></i> ${escHtml(t.reporter_phone || '-')}</p>
                 ${t.location_room?`<p><i class="fa-solid fa-location-dot w-4 text-center"></i> ${escHtml(t.location_room)}</p>`:''}
-                ${t.asset_name?`<p><i class="fa-solid fa-desktop w-4 text-center"></i> ${escHtml(t.asset_name)} ${t.asset_model?'('+escHtml(t.asset_model)+')':''}</p>`:''}
+                ${t.asset_name?`<p><i class="fa-solid fa-desktop w-4 text-center"></i> ${escHtml(t.asset_name)} ${t.asset_model?'('+escHtml(t.asset_model)+')':''} <span class="text-ocean-400 font-mono ml-1">${escHtml(t.asset_code)}</span></p>`:''}
                 <p><i class="fa-solid fa-clock w-4 text-center"></i> ${timeAgo(t.created_at)}</p>
             </div>
             <div class="flex items-center justify-between border-t border-white/10 pt-3">
@@ -381,3 +439,100 @@ window.handleUserSubmit = async function(e) {
         alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ');
     }
 };
+// ---- Asset Management Logic ----
+window.searchAssetHistory = async function() {
+    const code = document.getElementById('assetSearchInput').value.trim();
+    if (!code) return showToast('❌ กรุณาระบุรหัสครุภัณฑ์', true);
+
+    const loader = document.getElementById('page-loader');
+    if (loader) loader.classList.remove('hidden');
+
+    try {
+        const res = await fetch('/api/asset_history.php?code=' + encodeURIComponent(code));
+        const json = await res.json();
+        
+        if (loader) loader.classList.add('hidden');
+
+        if (json.success) {
+            renderAssetHistory(json.data);
+            document.getElementById('assetEmptyState').classList.add('hidden');
+            document.getElementById('assetHistoryContent').classList.remove('hidden');
+        } else {
+            showToast('❌ ' + json.error, true);
+        }
+    } catch (err) {
+        if (loader) loader.classList.add('hidden');
+        showToast('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ', true);
+    }
+};
+
+function renderAssetHistory(data) {
+    const { asset, history, analysis } = data;
+
+    // 1. Details
+    const detailEl = document.getElementById('assetDetailView');
+    detailEl.innerHTML = `
+        <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-text-muted">ชื่ออุปกรณ์:</span>
+            <span class="text-white font-medium">${escHtml(asset.asset_name)}</span>
+        </div>
+        <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-text-muted">ยี่ห้อ/รุ่น:</span>
+            <span class="text-white">${escHtml(asset.brand)} ${escHtml(asset.model)}</span>
+        </div>
+        <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-text-muted">Serial No:</span>
+            <span class="text-white font-mono">${escHtml(asset.serial_no || '-')}</span>
+        </div>
+        <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-text-muted">แผนก:</span>
+            <span class="text-white">${escHtml(asset.dept_name || 'ไม่ระบุ')}</span>
+        </div>
+        <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-text-muted">วันหมดประกัน:</span>
+            <span class="${analysis.warranty_status === 'Expired' ? 'text-status-critical' : 'text-status-completed'}">
+                ${asset.warranty_until ? new Date(asset.warranty_until).toLocaleDateString('th-TH') : 'ไม่ระบุ'}
+            </span>
+        </div>
+    `;
+
+    // 2. Analysis
+    const analysisEl = document.getElementById('assetAnalysisView');
+    const repairScore = analysis.total_repairs >= 5 ? 'ควรพิจารณาแทงจำหน่าย' : (analysis.total_repairs >= 3 ? 'เฝ้าระวัง' : 'ปกติ');
+    const scoreColor = analysis.total_repairs >= 5 ? 'bg-status-critical' : (analysis.total_repairs >= 3 ? 'bg-status-urgent' : 'bg-status-completed');
+
+    analysisEl.innerHTML = `
+        <div class="p-3 rounded-lg bg-white/5 flex items-center justify-between">
+            <span class="text-xs text-text-muted">จำนวนการซ่อมสะสม:</span>
+            <span class="text-lg font-bold text-white">${analysis.total_repairs} ครั้ง</span>
+        </div>
+        <div class="p-3 rounded-lg ${scoreColor}/20 border border-${scoreColor}/30">
+            <p class="text-xs text-text-muted mb-1">สถานะการประเมิน:</p>
+            <p class="text-sm font-bold ${scoreColor.replace('bg-', 'text-')}">${repairScore}</p>
+        </div>
+        <p class="text-[10px] text-text-muted italic">* คำนวณจากความถี่ในการแจ้งซ่อมและอายุการใช้งาน</p>
+    `;
+
+    // 3. Timeline
+    const timelineEl = document.getElementById('assetTimelineView');
+    if (history.length === 0) {
+        timelineEl.innerHTML = '<p class="text-text-muted text-center py-10">ไม่เคยมีประวัติการแจ้งซ่อม</p>';
+    } else {
+        timelineEl.innerHTML = history.map(t => `
+            <div class="relative">
+                <div class="absolute -left-[25px] top-1.5 w-4 h-4 rounded-full border-2 border-ocean-500 bg-ocean-900 z-10"></div>
+                <div>
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-xs font-bold text-ocean-400 font-mono">${t.ticket_no}</span>
+                        <span class="text-[10px] text-text-muted">${new Date(t.created_at).toLocaleDateString('th-TH')}</span>
+                    </div>
+                    <p class="text-sm text-white mb-2">${escHtml(t.problem_description)}</p>
+                    <div class="flex items-center gap-3 text-[10px]">
+                        <span class="px-2 py-0.5 rounded bg-white/5 text-text-muted">สถานะ: ${t.status}</span>
+                        <span class="text-text-muted">ช่าง: ${escHtml(t.technician || 'ไม่ระบุ')}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+}

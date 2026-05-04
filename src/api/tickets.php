@@ -41,7 +41,7 @@ if ($method === 'GET') {
                     t.department_id, t.asset_id, t.problem_description AS description,
                     t.status, t.assigned_to, t.note, t.created_at, t.closed_at,
                     u.full_name AS assigned_name,
-                    a.asset_name, a.model AS asset_model,
+                    a.asset_name, a.model AS asset_model, a.asset_code,
                     d.dept_name AS location_room
              FROM tickets t
              LEFT JOIN users      u ON t.assigned_to  = u.id
@@ -91,13 +91,21 @@ if ($method === 'POST') {
         $seq     = (int)$stmt->fetchColumn() + 1;
         $ticketNo = $prefix . str_pad($seq, 3, '0', STR_PAD_LEFT);
 
+        // --- ASSET LOOKUP ---
+        $assetId = !empty($data['asset_id']) ? (int)$data['asset_id'] : null;
+        if (!$assetId && !empty($data['asset_code_display'])) {
+            $ast_stmt = $db->prepare("SELECT id FROM assets WHERE asset_code = ? LIMIT 1");
+            $ast_stmt->execute([trim($data['asset_code_display'])]);
+            $assetId = $ast_stmt->fetchColumn() ?: null;
+        }
+
         $stmt = $db->prepare("INSERT INTO tickets (ticket_no, reporter_name, reporter_phone, priority, asset_id, department_id, problem_description, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())");
         $stmt->execute([
             $ticketNo,
             $data['reporter_name'],
             $data['reporter_phone'] ?? null,
             $data['priority'],
-            !empty($data['asset_id']) ? (int)$data['asset_id'] : null,
+            $assetId,
             !empty($data['department_id']) ? (int)$data['department_id'] : null,
             $data['description'],
         ]);
