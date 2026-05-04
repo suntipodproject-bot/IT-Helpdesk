@@ -365,24 +365,34 @@ window.handleFormSubmit = async function(e) {
 }
 
 // ---- QR / Asset Lookup ----
-async function simulateQRScan() {
+window.searchAssetForTicket = async function(codeToSearch = null) {
     const input = document.getElementById('assetIdInput');
     const info  = document.getElementById('assetInfo');
-    const code  = input.value.trim() || 'PC-OPD-001';
-    input.value = 'กำลังค้นหา...';
-    input.classList.add('animate-pulse');
+    const code  = codeToSearch || input.value.trim();
+    
+    if (!code) return;
+
+    if (!codeToSearch) {
+        input.value = 'กำลังค้นหา...';
+        input.classList.add('animate-pulse');
+    }
+
     try {
         const res  = await fetch('/api/assets.php?code=' + encodeURIComponent(code));
         const json = await res.json();
-        input.classList.remove('animate-pulse');
-        if (json.success) {
+        
+        if (input) input.classList.remove('animate-pulse');
+        
+        if (json.success && json.data) {
             const a = json.data;
-            input.value = a.asset_code;
+            if (input) input.value = a.asset_code;
             const hiddenId = document.getElementById('hiddenAssetId');
             if (hiddenId) hiddenId.value = a.id;
             
-            info.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> พบ: ${a.asset_name} ${a.brand} ${a.model}`;
-            info.classList.remove('hidden');
+            if (info) {
+                info.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> พบ: ${escHtml(a.asset_name)} ${escHtml(a.brand || '')} ${escHtml(a.model || '')}`;
+                info.classList.remove('hidden');
+            }
             
             // Auto-fill department if available
             if (a.department_id) {
@@ -394,12 +404,23 @@ async function simulateQRScan() {
                 }
             }
         } else {
-            input.value = code;
-            info.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1 text-red-400"></i> ไม่พบรหัสนี้ในระบบ`;
-            info.classList.remove('hidden');
+            if (input) input.value = code;
+            if (info) {
+                info.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1 text-red-400"></i> ไม่พบรหัสนี้ในระบบ`;
+                info.classList.remove('hidden');
+            }
         }
-    } catch(e) { input.classList.remove('animate-pulse'); input.value = code; }
-}
+    } catch(e) { 
+        if (input) {
+            input.classList.remove('animate-pulse'); 
+            input.value = code;
+        }
+    }
+};
+
+window.simulateQRScan = function() {
+    searchAssetForTicket();
+};
 
 // ---- Navigation (switchView) — Full Definition ----
 window.switchView = function(viewId) {

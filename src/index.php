@@ -945,9 +945,15 @@ header('Content-Type: text/html; charset=utf-8');
                 <!-- VIEW 4: ASSETS (Functional) -->
                 <!-- ========================================== -->
                 <section id="view-assets" class="view-section hidden space-y-6">
-                    <div class="mb-6">
-                        <h2 class="text-2xl font-bold text-white mb-1">จัดการครุภัณฑ์ไอที</h2>
-                        <p class="text-text-muted text-sm">ค้นหาสเปกอุปกรณ์และประวัติการซ่อมเพื่อวิเคราะห์การแทงจำหน่าย</p>
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white mb-1">จัดการครุภัณฑ์ไอที</h2>
+                            <p class="text-text-muted text-sm">ค้นหาสเปกอุปกรณ์และประวัติการซ่อมเพื่อวิเคราะห์การแทงจำหน่าย</p>
+                        </div>
+                        <a href="print_labels.php" target="_blank"
+                            class="bg-ocean-700 hover:bg-ocean-600 text-white px-4 py-2 rounded-lg text-sm border border-white/10 transition-colors flex items-center gap-2 shadow-lg shadow-ocean-900/20">
+                            <i class="fa-solid fa-qrcode"></i> พิมพ์สติ๊กเกอร์ QR Code
+                        </a>
                     </div>
 
                     <div class="glass-card p-6">
@@ -1144,11 +1150,27 @@ header('Content-Type: text/html; charset=utf-8');
                 });
             }
 
-            <?php if ($user['role'] === 'user'): ?>
-            if (typeof switchView === 'function') switchView('create-ticket');
-            <?php else: ?>
-            if (typeof switchView === 'function') switchView('dashboard');
-            <?php endif; ?>
+            // Handle QR Scan / URL Parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const assetCode = urlParams.get('asset_code');
+            
+            if (assetCode) {
+                if (typeof switchView === 'function') switchView('create-ticket');
+                setTimeout(() => {
+                    const assetInput = document.getElementById('asset_code_display');
+                    if (assetInput) {
+                        assetInput.value = assetCode;
+                        // Trigger lookup manually
+                        if (typeof searchAssetForTicket === 'function') searchAssetForTicket(assetCode);
+                    }
+                }, 500);
+            } else {
+                <?php if ($user['role'] === 'user'): ?>
+                if (typeof switchView === 'function') switchView('create-ticket');
+                <?php else: ?>
+                if (typeof switchView === 'function') switchView('dashboard');
+                <?php endif; ?>
+            }
         });
     </script>
     <!-- Real API Integration -->
