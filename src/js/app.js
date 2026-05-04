@@ -173,6 +173,20 @@ async function loadTickets(filters = {}) {
                 ${t.location_room?`<p><i class="fa-solid fa-location-dot w-4 text-center"></i> ${escHtml(t.location_room)}</p>`:''}
                 ${t.asset_name?`<p><i class="fa-solid fa-desktop w-4 text-center"></i> ${escHtml(t.asset_name)} ${t.asset_model?'('+escHtml(t.asset_model)+')':''} <span class="text-ocean-400 font-mono ml-1">${escHtml(t.asset_code)}</span></p>`:''}
                 <p><i class="fa-solid fa-clock w-4 text-center"></i> ${timeAgo(t.created_at)}</p>
+                
+                ${(window.IS_ADMIN || (window.CURRENT_USER && window.CURRENT_USER.role === 'staff')) && !t.asset_name ? `
+                <div class="mt-3 p-2 bg-white/5 rounded border border-dashed border-white/10">
+                    <p class="text-[10px] mb-1.5 text-ocean-400 font-medium">เชื่อมโยงครุภัณฑ์:</p>
+                    <div class="flex gap-1.5">
+                        <input type="text" id="link-asset-${t.id}" placeholder="รหัสเครื่อง..." 
+                            class="flex-1 bg-ocean-900 border border-white/10 rounded px-2 py-1 text-[10px] focus:outline-none focus:border-ocean-500">
+                        <button onclick="linkAsset(${t.id})" 
+                            class="bg-ocean-700 hover:bg-ocean-600 text-white px-2 rounded text-[10px] transition-colors">
+                            เชื่อม
+                        </button>
+                    </div>
+                </div>
+                ` : ''}
             </div>
             <div class="flex items-center justify-between border-t border-white/10 pt-3">
                 ${STATUS_LABEL[t.status] || ''}
@@ -197,6 +211,28 @@ async function updateStatus(id, status) {
         body: JSON.stringify({ id, status }) });
     loadTickets();
 }
+
+window.linkAsset = async function(id) {
+    const code = document.getElementById('link-asset-' + id).value.trim();
+    if (!code) return showToast('❌ กรุณาระบุรหัสเครื่อง', true);
+
+    try {
+        const res = await fetch('/api/tickets.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, asset_code: code })
+        });
+        const json = await res.json();
+        if (json.success) {
+            showToast('✅ เชื่อมโยงครุภัณฑ์เรียบร้อย');
+            loadTickets();
+        } else {
+            showToast('❌ ' + json.error, true);
+        }
+    } catch (e) {
+        showToast('❌ เกิดข้อผิดพลาด', true);
+    }
+};
 
 async function assignTicket(id, assigned_to) {
     await fetch('/api/tickets.php', { method:'PUT', headers:{'Content-Type':'application/json'},

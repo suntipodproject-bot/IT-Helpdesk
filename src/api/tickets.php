@@ -160,7 +160,14 @@ if ($method === 'PUT') {
         $sets[]   = 'assigned_to = ?';
         $params[] = $data['assigned_to'] ?: null;
         // Auto set in_progress when assigned
-        $sets[]   = "status = IF(status='pending','in_progress',status)";
+        $sets[]   = "status = IF(status='pending','ongoing',status)";
+    }
+    if (!empty($data['asset_code'])) {
+        $ast_stmt = $db->prepare("SELECT id FROM assets WHERE asset_code = ? LIMIT 1");
+        $ast_stmt->execute([trim($data['asset_code'])]);
+        $assetId = $ast_stmt->fetchColumn() ?: null;
+        $sets[]   = 'asset_id = ?';
+        $params[] = $assetId;
     }
     if (isset($data['note'])) {
         $sets[]   = 'note = ?';
