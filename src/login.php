@@ -111,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-700 mb-4 shadow-[0_0_40px_rgba(0,180,216,0.4)]">
                 <i class="fa-solid fa-microchip text-white text-4xl"></i>
             </div>
-            <h1 class="text-3xl font-bold text-white">IT Helpdesk</h1>
+            <h1 class="text-3xl font-bold text-white">SNCH IT Helpdesk</h1>
             <p class="text-slate-400 mt-1 text-sm">ระบบบริหารจัดการแจ้งซ่อมไอที</p>
         </div>
 
@@ -168,9 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </form>
 
-            <!-- Default credentials hint -->
             <div class="mt-6 pt-5 border-t border-white/10">
-                <p class="text-xs text-slate-500 text-center mb-3">บัญชีเริ่มต้น: <span class="text-cyan-400">admin</span> / <span class="text-cyan-400">password</span></p>
                 <div class="text-center">
                     <a href="/register.php" class="text-sm text-cyan-400 hover:text-cyan-300 transition-colors inline-flex items-center gap-2">
                         <i class="fa-solid fa-user-plus"></i> สมัครสมาชิกใหม่
@@ -180,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <p class="text-center text-slate-600 text-xs mt-6">
-            <?= APP_NAME ?> v<?= APP_VERSION ?> · ฝ่ายเทคโนโลยีสารสนเทศ
+            <?= APP_NAME ?> v<?= APP_VERSION ?> · กลุ่มงานสุขภาพดิจิทัล
         </p>
     </div>
 
