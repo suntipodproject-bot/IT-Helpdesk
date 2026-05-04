@@ -300,8 +300,19 @@ function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'
 window.showToast = function(msg, isError = false) {
     const toast = document.getElementById('toast');
     const msgEl = document.getElementById('toast-message');
+    const titleEl = toast.querySelector('h4');
     if (!toast || !msgEl) return;
     
+    if (titleEl) {
+        titleEl.textContent = isError ? 'ไม่สำเร็จ!' : 'สำเร็จ!';
+        titleEl.className = isError ? 'font-bold text-red-400 text-sm' : 'font-bold text-white text-sm';
+    }
+    
+    const icon = toast.querySelector('i');
+    if (icon) {
+        icon.className = isError ? 'fa-solid fa-circle-xmark text-red-500 text-xl mr-3' : 'fa-solid fa-circle-check text-status-normal text-xl mr-3';
+    }
+
     msgEl.textContent = msg;
     toast.style.borderLeftColor = isError ? '#ff4d4d' : '#00b4d8';
     toast.classList.add('show');

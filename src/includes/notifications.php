@@ -5,14 +5,14 @@ function sendSystemNotification($message, $ticketNo = '', $priority = 'normal') 
     // 1. Telegram
     if (defined('TELEGRAM_ENABLED') && TELEGRAM_ENABLED && TELEGRAM_BOT_TOKEN !== 'YOUR_TELEGRAM_BOT_TOKEN') {
         $priorityIcon = ($priority === 'critical') ? '🔴' : (($priority === 'urgent') ? '🟠' : '🟢');
-        $text = "🔔 *แจ้งซ่อมใหม่: $ticketNo*\n";
+        $text = "🔔 <b>แจ้งซ่อมใหม่: $ticketNo</b>\n";
         $text .= "ระดับ: $priorityIcon\n\n";
-        $text .= $message;
+        $text .= htmlspecialchars($message);
 
         $payload = [
             'chat_id' => TELEGRAM_CHAT_ID,
             'text' => $text,
-            'parse_mode' => 'Markdown'
+            'parse_mode' => 'HTML'
         ];
 
         $ch = curl_init('https://api.telegram.org/bot' . TELEGRAM_BOT_TOKEN . '/sendMessage');
@@ -21,9 +21,17 @@ function sendSystemNotification($message, $ticketNo = '', $priority = 'normal') 
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => json_encode($payload),
             CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_TIMEOUT => 5
+            CURLOPT_TIMEOUT => 10
         ]);
-        curl_exec($ch);
+        $result = curl_exec($ch);
+        if ($result === false) {
+            error_log("Telegram Error: " . curl_error($ch));
+        } else {
+            $res = json_decode($result, true);
+            if (!$res['ok']) {
+                error_log("Telegram API Error: " . $result);
+            }
+        }
         curl_close($ch);
     }
 
@@ -71,15 +79,15 @@ function sendSystemNotification($message, $ticketNo = '', $priority = 'normal') 
 function sendAssignmentNotification($ticketNo, $staffName, $priority, $description) {
     if (defined('TELEGRAM_ENABLED') && TELEGRAM_ENABLED) {
         $priorityIcon = ($priority === 'critical') ? '🔴' : (($priority === 'urgent') ? '🟠' : '🟢');
-        $text = "🎯 *มอบหมายงานใหม่: $ticketNo*\n";
+        $text = "🎯 <b>มอบหมายงานใหม่: $ticketNo</b>\n";
         $text .= "👤 ผู้รับผิดชอบ: $staffName\n";
         $text .= "ระดับ: $priorityIcon\n\n";
-        $text .= "🛠️ รายละเอียด: " . mb_substr($description, 0, 100);
+        $text .= "🛠️ รายละเอียด: " . htmlspecialchars(mb_substr($description, 0, 100));
 
         $payload = [
             'chat_id' => TELEGRAM_CHAT_ID,
             'text' => $text,
-            'parse_mode' => 'Markdown'
+            'parse_mode' => 'HTML'
         ];
 
         $ch = curl_init('https://api.telegram.org/bot' . TELEGRAM_BOT_TOKEN . '/sendMessage');
@@ -88,9 +96,17 @@ function sendAssignmentNotification($ticketNo, $staffName, $priority, $descripti
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => json_encode($payload),
             CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-            CURLOPT_TIMEOUT => 5
+            CURLOPT_TIMEOUT => 10
         ]);
-        curl_exec($ch);
+        $result = curl_exec($ch);
+        if ($result === false) {
+            error_log("Telegram Assignment Error: " . curl_error($ch));
+        } else {
+            $res = json_decode($result, true);
+            if (!$res['ok']) {
+                error_log("Telegram Assignment API Error: " . $result);
+            }
+        }
         curl_close($ch);
     }
 }

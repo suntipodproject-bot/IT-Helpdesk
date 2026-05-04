@@ -1,7 +1,6 @@
 <?php
 // ======================================================
-// config.php — Application Configuration
-// ======================================================
+date_default_timezone_set('Asia/Bangkok');
 
 // Database
 define('DB_HOST',     'helpdesk-db');
