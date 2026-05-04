@@ -637,12 +637,15 @@ header('Content-Type: text/html; charset=utf-8');
                                 <div class="space-y-2 md:col-span-2">
                                     <label class="text-sm font-medium text-text-muted block">แนบรูปภาพประกอบ
                                         (ถ้ามี)</label>
-                                    <div
+                                    <div onclick="document.getElementById('ticketFile').click()"
                                         class="border-2 border-dashed border-white/20 rounded-lg p-6 text-center hover:border-ocean-500 transition-colors cursor-pointer bg-ocean-900/50">
                                         <i class="fa-solid fa-cloud-arrow-up text-3xl text-ocean-400 mb-2"></i>
                                         <p class="text-sm text-white font-medium">คลิกเพื่ออัปโหลด หรือลากไฟล์มาวาง</p>
                                         <p class="text-xs text-text-muted mt-1">รองรับ JPG, PNG สูงสุด 5MB</p>
-                                        <input type="file" class="hidden" accept="image/*" multiple>
+                                        <input type="file" id="ticketFile" name="image" class="hidden" accept="image/jpeg,image/png" onchange="previewFile(this)">
+                                    </div>
+                                    <div id="filePreview" class="hidden mt-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <!-- Preview will be here -->
                                     </div>
                                 </div>
 

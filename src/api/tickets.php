@@ -39,7 +39,7 @@ if ($method === 'GET') {
 
     $sql  = "SELECT t.id, t.ticket_no, t.reporter_name, t.reporter_phone, t.priority,
                     t.department_id, t.asset_id, t.problem_description AS description,
-                    t.status, t.assigned_to, t.note, t.created_at, t.closed_at,
+                    t.image_url, t.status, t.assigned_to, t.note, t.created_at, t.closed_at,
                     u.full_name AS assigned_name,
                     a.asset_name, a.model AS asset_model, a.asset_code,
                     d.dept_name AS location_room
@@ -64,7 +64,30 @@ if ($method === 'GET') {
 // ---- POST: Create new ticket ----
 if ($method === 'POST') {
     try {
-        $data = json_decode(file_get_contents('php://input'), true) ?? $_POST;
+        $data = $_POST;
+        $file = $_FILES['image'] ?? null;
+        $imageUrl = null;
+
+        if ($file && $file['error'] === UPLOAD_ERR_OK) {
+            $allowed = ['image/jpeg', 'image/jpg', 'image/png'];
+            if (!in_array($file['type'], $allowed)) {
+                echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG และ PNG เท่านั้น']);
+                exit;
+            }
+            if ($file['size'] > 5 * 1024 * 1024) {
+                echo json_encode(['success' => false, 'error' => 'ไฟล์ขนาดใหญ่เกิน 5MB']);
+                exit;
+            }
+
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $newName = 'ticket_' . time() . '_' . uniqid() . '.' . $ext;
+            $uploadDir = __DIR__ . '/../uploads/';
+            if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+            
+            if (move_uploaded_file($file['tmp_name'], $uploadDir . $newName)) {
+                $imageUrl = '/uploads/' . $newName;
+            }
+        }
 
         $required = ['reporter_name', 'priority', 'description', 'department_id'];
         foreach ($required as $f) {
@@ -99,7 +122,7 @@ if ($method === 'POST') {
             $assetId = $ast_stmt->fetchColumn() ?: null;
         }
 
-        $stmt = $db->prepare("INSERT INTO tickets (ticket_no, reporter_name, reporter_phone, priority, asset_id, department_id, problem_description, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NOW())");
+        $stmt = $db->prepare("INSERT INTO tickets (ticket_no, reporter_name, reporter_phone, priority, asset_id, department_id, problem_description, image_url, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', NOW())");
         $stmt->execute([
             $ticketNo,
             $data['reporter_name'],
@@ -108,6 +131,7 @@ if ($method === 'POST') {
             $assetId,
             !empty($data['department_id']) ? (int)$data['department_id'] : null,
             $data['description'],
+            $imageUrl
         ]);
 
         $newId = $db->lastInsertId();

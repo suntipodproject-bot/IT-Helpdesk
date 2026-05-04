@@ -184,6 +184,17 @@ async function loadTickets(filters = {}) {
                 ${t.asset_name?`<p><i class="fa-solid fa-desktop w-4 text-center"></i> ${escHtml(t.asset_name)} ${t.asset_model?'('+escHtml(t.asset_model)+')':''} <span class="text-ocean-400 font-mono ml-1">${escHtml(t.asset_code)}</span></p>`:''}
                 <p><i class="fa-solid fa-clock w-4 text-center"></i> ${timeAgo(t.created_at)}</p>
                 
+                ${t.image_url ? `
+                <div class="mt-2">
+                    <a href="${t.image_url}" target="_blank" class="block relative group/img overflow-hidden rounded-lg border border-white/10 h-20 w-full">
+                        <img src="${t.image_url}" class="w-full h-full object-cover transition-transform group-hover/img:scale-110">
+                        <div class="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 flex items-center justify-center transition-opacity">
+                            <i class="fa-solid fa-magnifying-glass-plus text-white text-lg"></i>
+                        </div>
+                    </a>
+                </div>
+                ` : ''}
+                
                 ${(window.IS_ADMIN || (window.CURRENT_USER && window.CURRENT_USER.role === 'staff')) && !t.asset_name ? `
                 <div class="mt-3 p-2 bg-white/5 rounded border border-dashed border-white/10">
                     <p class="text-[10px] mb-1.5 text-ocean-400 font-medium">เชื่อมโยงครุภัณฑ์:</p>
@@ -264,6 +275,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ---- Create Ticket Form ----
 let isSubmitting = false;
+window.previewFile = function(input) {
+    const container = document.getElementById('filePreview');
+    container.innerHTML = '';
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+            showToast('❌ ไฟล์ขนาดใหญ่เกิน 5MB', true);
+            input.value = '';
+            return;
+        }
+        
+        container.classList.remove('hidden');
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            container.innerHTML = `
+                <div class="relative group">
+                    <img src="${e.target.result}" class="w-full h-24 object-cover rounded-lg border border-white/10">
+                    <button type="button" onclick="clearFile()" class="absolute -top-2 -right-2 bg-red-500 text-white w-5 h-5 rounded-full text-[10px] flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            `;
+        }
+        reader.readAsDataURL(file);
+    } else {
+        container.classList.add('hidden');
+    }
+};
+
+window.clearFile = function() {
+    const input = document.getElementById('ticketFile');
+    input.value = '';
+    previewFile(input);
+};
+
 window.handleFormSubmit = async function(e) {
     e.preventDefault();
     if (isSubmitting) return;
@@ -282,14 +328,11 @@ window.handleFormSubmit = async function(e) {
     }
 
     const formData = new FormData(form);
-    const data = {};
-    formData.forEach((value, key) => { data[key] = value; });
 
     try {
         const res  = await fetch('/api/tickets.php', { 
             method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify(data) 
+            body: formData 
         });
         const json = await res.json();
         
