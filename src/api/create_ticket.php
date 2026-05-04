@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/notifications.php';
 
 header('Content-Type: application/json');
 
@@ -78,8 +79,18 @@ try {
         $problem_description
     ]);
 
-    // 4. Line Notify (Placeholder - could be implemented if token is available)
-    // sendLineNotify("แจ้งซ่อมใหม่: $ticket_no\nโดย: $reporter_name\nแผนก: ...\nอาการ: $problem_description");
+    // 4. Send Notifications
+    $deptStmt = $db->prepare("SELECT dept_name FROM department WHERE id = ?");
+    $deptStmt->execute([$department_id]);
+    $dept = $deptStmt->fetch();
+    $deptName = $dept ? $dept['dept_name'] : 'ไม่ระบุ';
+
+    $notifyMsg = "👤 ผู้แจ้ง: $reporter_name\n";
+    $notifyMsg .= "📞 เบอร์ติดต่อ: $reporter_phone\n";
+    $notifyMsg .= "🏥 แผนก: $deptName\n";
+    $notifyMsg .= "🛠️ อาการ: $problem_description";
+
+    sendSystemNotification($notifyMsg, $ticket_no, $priority);
 
     echo json_encode(['success' => true, 'ticket_no' => $ticket_no]);
 } catch (Exception $e) {

@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($username && $password) {
         $db   = getDB();
-        $stmt = $db->prepare('SELECT id, username, password, full_name, role FROM users WHERE username = ? AND is_active = 1');
+        $stmt = $db->prepare('SELECT id, username, password, full_name, role, must_change_password FROM users WHERE username = ? AND is_active = 1');
         $stmt->execute([$username]);
         $user = $stmt->fetch();
 
@@ -27,7 +27,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['full_name']     = $user['full_name'];
             $_SESSION['role']          = $user['role'];
             $_SESSION['last_activity'] = time();
-            header('Location: /index.php');
+
+            if ($user['must_change_password']) {
+                header('Location: /setup_password.php');
+            } else {
+                header('Location: /index.php');
+            }
             exit;
         } else {
             $error = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';

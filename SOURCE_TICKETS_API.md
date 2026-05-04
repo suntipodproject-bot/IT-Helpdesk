@@ -1,3 +1,7 @@
+# Tickets API (PHP)
+ไฟล์หลักที่จัดการการเพิ่ม ลบ แก้ไข และดึงข้อมูล Ticket
+
+```php
 <?php
 // ======================================================
 // api/tickets.php — Tickets CRUD API
@@ -27,14 +31,9 @@ if ($method === 'GET') {
         $params[] = $_GET['priority'];
     }
     if (!empty($_GET['search'])) {
-        $where[]  = '(t.ticket_no LIKE ? OR t.reporter_name LIKE ? OR t.description LIKE ?)';
+        $where[]  = '(t.ticket_no LIKE ? OR t.reporter_name LIKE ? OR t.problem_description LIKE ?)';
         $q        = '%' . $_GET['search'] . '%';
         $params   = array_merge($params, [$q, $q, $q]);
-    }
-
-    if (!empty($_GET['assigned_to'])) {
-        $where[]  = 't.assigned_to = ?';
-        $params[] = $_GET['assigned_to'];
     }
 
     $sql  = "SELECT t.id, t.ticket_no, t.reporter_name, t.reporter_phone, t.priority,
@@ -80,7 +79,7 @@ if ($method === 'POST') {
     $dup_stmt = $db->prepare("
         SELECT id FROM tickets 
         WHERE reporter_name = ? 
-          AND description = ? 
+          AND problem_description = ? 
           AND created_at > NOW() - INTERVAL 60 SECOND
         LIMIT 1
     ");
@@ -144,93 +143,4 @@ if ($method === 'POST') {
 
     exit;
 }
-
-// ---- PUT: Update ticket (status / assign) ----
-if ($method === 'PUT') {
-    $data     = json_decode(file_get_contents('php://input'), true) ?? [];
-    $ticketId = (int)($data['id'] ?? 0);
-
-    if (!$ticketId) {
-        http_response_code(422);
-        echo json_encode(['success' => false, 'error' => 'ไม่พบ ticket id']);
-        exit;
-    }
-
-    $sets   = [];
-    $params = [];
-
-    if (isset($data['status'])) {
-        // Map frontend status values to DB ENUM values
-        $statusMap = ['in_progress' => 'ongoing', 'done' => 'completed'];
-        $dbStatus  = $statusMap[$data['status']] ?? $data['status'];
-        $sets[]   = 'status = ?';
-        $params[] = $dbStatus;
-        if ($dbStatus === 'completed') {
-            $sets[] = 'closed_at = NOW()';
-        }
-    }
-    if (isset($data['assigned_to'])) {
-        $sets[]   = 'assigned_to = ?';
-        $params[] = $data['assigned_to'] ?: null;
-        // Auto set in_progress when assigned
-        $sets[]   = "status = IF(status='pending','in_progress',status)";
-    }
-    if (isset($data['note'])) {
-        $sets[]   = 'note = ?';
-        $params[] = $data['note'];
-    }
-
-    if (empty($sets)) {
-        echo json_encode(['success' => false, 'error' => 'ไม่มีข้อมูลให้อัปเดต']);
-        exit;
-    }
-
-    $params[] = $ticketId;
-    $sql      = 'UPDATE tickets SET ' . implode(', ', $sets) . ' WHERE id = ?';
-    $db->prepare($sql)->execute($params);
-
-    // --- ASSIGNMENT NOTIFICATION ---
-    if (isset($data['assigned_to']) && $data['assigned_to']) {
-        $staff_stmt = $db->prepare("SELECT full_name FROM users WHERE id = ?");
-        $staff_stmt->execute([$data['assigned_to']]);
-        $staffName = $staff_stmt->fetchColumn();
-
-        $ticket_stmt = $db->prepare("SELECT ticket_no, priority, problem_description FROM tickets WHERE id = ?");
-        $ticket_stmt->execute([$ticketId]);
-        $tk = $ticket_stmt->fetch();
-
-        if ($staffName && $tk) {
-            sendAssignmentNotification($tk['ticket_no'], $staffName, $tk['priority'], $tk['problem_description']);
-        }
-    }
-
-    echo json_encode(['success' => true]);
-    exit;
-}
-
-// ---- DELETE: Remove ticket (Admin only) ----
-if ($method === 'DELETE') {
-    if ($user['role'] !== 'admin') {
-        http_response_code(403);
-        echo json_encode(['success' => false, 'error' => 'ไม่มีสิทธิ์เข้าถึง']);
-        exit;
-    }
-
-    $data = json_decode(file_get_contents('php://input'), true) ?? [];
-    $id   = (int)($data['id'] ?? 0);
-
-    if (!$id) {
-        http_response_code(422);
-        echo json_encode(['success' => false, 'error' => 'ไม่พบ ID']);
-        exit;
-    }
-
-    $stmt = $db->prepare("DELETE FROM tickets WHERE id = ?");
-    $stmt->execute([$id]);
-
-    echo json_encode(['success' => true]);
-    exit;
-}
-
-http_response_code(405);
-echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+```

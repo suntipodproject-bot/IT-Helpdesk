@@ -13,6 +13,8 @@ if ($user['role'] === 'admin') {
     $positions = $db->query("SELECT * FROM position ORDER BY position_name ASC")->fetchAll();
 }
 
+$staff_list = $db->query("SELECT id, full_name, role FROM users WHERE role IN ('admin', 'staff') AND is_active = 1 ORDER BY full_name ASC")->fetchAll();
+
 // Fetch departments for ticket creation
 $departments_list = $db->query("SELECT * FROM department ORDER BY dept_name ASC")->fetchAll();
 
@@ -328,10 +330,16 @@ header('Content-Type: text/html; charset=utf-8');
                         data-target="ticket-list">
                         <i class="fa-solid fa-list-check w-6"></i>
                         <span class="ml-3 hidden md:inline"><?= $user['role'] === 'user' ? 'แจ้งซ่อมของฉัน' : 'รายการแจ้งซ่อม' ?></span>
-                        <?php if ($user['role'] !== 'user'): ?>
-                        <span class="ml-auto bg-ocean-500 text-white text-xs px-2 py-1 rounded-full hidden md:inline">12</span>
-                        <?php endif; ?>
                     </button>
+
+                    <?php if ($user['role'] !== 'user'): ?>
+                    <button onclick="switchView('my-jobs')"
+                        class="nav-btn w-full flex items-center p-3 rounded-lg text-text-muted hover:text-white hover:bg-ocean-700 transition-colors"
+                        data-target="my-jobs">
+                        <i class="fa-solid fa-briefcase w-6"></i>
+                        <span class="ml-3 hidden md:inline">งานของฉัน</span>
+                    </button>
+                    <?php endif; ?>
 
                     <?php if ($user['role'] !== 'user'): ?>
                     <button onclick="switchView('assets')"
@@ -503,10 +511,10 @@ header('Content-Type: text/html; charset=utf-8');
                                             class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ocean-400">
                                             <i class="fa-solid fa-user"></i>
                                         </div>
-                                        <input type="text" name="reporter_info" required
+                                        <input type="text" name="reporter_name" required
                                             class="dark-input w-full pl-10 pr-3 py-2.5 rounded-lg text-sm"
                                             value="<?= htmlspecialchars($user['full_name']) ?>"
-                                            placeholder="นพ. สมชาย (โทร 1234)">
+                                            placeholder="ชื่อผู้แจ้ง (เบอร์โทรติดต่อ)">
                                     </div>
                                 </div>
 
@@ -569,9 +577,10 @@ header('Content-Type: text/html; charset=utf-8');
                                                 class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ocean-400">
                                                 <i class="fa-solid fa-barcode"></i>
                                             </div>
-                                            <input type="text" id="assetIdInput" name="asset_code"
+                                            <input type="text" id="assetIdInput" name="asset_code_display"
                                                 class="dark-input w-full pl-10 pr-3 py-2.5 rounded-lg text-sm"
                                                 placeholder="เช่น PC-OPD-001 หรือสแกน QR">
+                                            <input type="hidden" name="asset_id" id="hiddenAssetId">
                                         </div>
                                         <button type="button" onclick="simulateQRScan()"
                                             class="bg-ocean-700 hover:bg-ocean-600 text-white px-4 rounded-lg border border-white/10 transition-colors flex items-center justify-center"
@@ -588,7 +597,7 @@ header('Content-Type: text/html; charset=utf-8');
                                 <div class="space-y-2 md:col-span-2">
                                     <label class="text-sm font-medium text-text-muted block">รายละเอียดอาการเสีย <span
                                             class="text-status-critical">*</span></label>
-                                    <textarea name="problem_description" required rows="4" class="dark-input w-full px-3 py-2.5 rounded-lg text-sm"
+                                    <textarea name="description" required rows="4" class="dark-input w-full px-3 py-2.5 rounded-lg text-sm"
                                         placeholder="อธิบายอาการที่พบ เช่น เปิดเครื่องไม่ติด มีเสียงร้อง, ปริ้นเตอร์กระดาษติด..."></textarea>
                                 </div>
 
@@ -612,9 +621,10 @@ header('Content-Type: text/html; charset=utf-8');
                                     class="px-5 py-2.5 rounded-lg text-sm font-medium text-text-muted hover:text-white transition-colors">
                                     ยกเลิก
                                 </button>
-                                <button type="submit"
-                                    class="bg-ocean-500 hover:bg-ocean-400 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-all shadow-[0_0_15px_rgba(0,180,216,0.3)] hover:shadow-[0_0_20px_rgba(0,180,216,0.5)] flex items-center">
-                                    <i class="fa-solid fa-paper-plane mr-2"></i> ส่งเรื่องแจ้งซ่อม
+                                <button type="submit" id="submitBtn"
+                                    class="bg-ocean-500 hover:bg-ocean-400 text-white px-6 py-2.5 rounded-lg text-sm font-medium transition-all shadow-[0_0_15px_rgba(0,180,216,0.3)] hover:shadow-[0_0_20px_rgba(0,180,216,0.5)] flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
+                                    <i class="fa-solid fa-paper-plane mr-2" id="submitIcon"></i>
+                                    <span id="submitText">ส่งเรื่องแจ้งซ่อม</span>
                                 </button>
                             </div>
                         </form>
@@ -675,6 +685,11 @@ header('Content-Type: text/html; charset=utf-8');
                                 </div>
                                 <span class="badge badge-<?= $priorityClass ?>"><?= $priorityText ?></span>
                              </div>
+                             <?php if ($user['role'] === 'admin'): ?>
+                             <button onclick="deleteTicket(<?= $tk['id'] ?>)" class="absolute top-2 right-2 text-text-muted hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 p-1" title="ลบรายการ">
+                                 <i class="fa-solid fa-trash-can"></i>
+                             </button>
+                             <?php endif; ?>
                             <div class="space-y-2 text-sm text-text-muted mb-4">
                                 <p><i class="fa-solid fa-location-dot w-5 text-center"></i> <?= htmlspecialchars($tk['dept_name'] ?? 'ไม่ระบุ') ?></p>
                                 <p><i class="fa-solid fa-desktop w-5 text-center"></i> <?= htmlspecialchars($tk['asset_code'] ?? 'ไม่มีข้อมูลครุภัณฑ์') ?></p>
@@ -810,6 +825,10 @@ header('Content-Type: text/html; charset=utf-8');
                             <h2 class="text-2xl font-bold text-white mb-1">จัดการผู้ใช้งานระบบ</h2>
                             <p class="text-text-muted text-sm">ตรวจสอบและแก้ไขสิทธิ์การใช้งานของสมาชิก</p>
                         </div>
+                        <button onclick="openAddUserModal()"
+                            class="bg-ocean-500 hover:bg-ocean-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-[0_0_15px_rgba(0,180,216,0.3)] flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus"></i> เพิ่มผู้ใช้งาน
+                        </button>
                     </div>
 
                     <div class="glass-card overflow-hidden">
@@ -870,6 +889,21 @@ header('Content-Type: text/html; charset=utf-8');
                     </div>
                 </section>
                 <?php endif; ?>
+
+                <!-- ========================================== -->
+                <!-- VIEW 6: MY JOBS (Staff/Admin Only) -->
+                <!-- ========================================== -->
+                <?php if ($user['role'] !== 'user'): ?>
+                <section id="view-my-jobs" class="view-section hidden space-y-6">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-white mb-1">งานที่ได้รับมอบหมาย</h2>
+                        <p class="text-text-muted text-sm">รายการซ่อมที่คุณเป็นผู้รับผิดชอบ</p>
+                    </div>
+                    <div id="my-jobs-container" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                        <!-- Content loaded via JS -->
+                    </div>
+                </section>
+                <?php endif; ?>
                 
                 <!-- ========================================== -->
                 <!-- VIEW 4: ASSETS (Placeholder) -->
@@ -895,6 +929,56 @@ header('Content-Type: text/html; charset=utf-8');
         </main>
     </div>
 
+    <!-- Modal: Add/Edit User -->
+    <div id="userModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div class="p-6 border-b border-white/10 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white" id="userModalTitle">เพิ่มผู้ใช้งานใหม่</h3>
+                <button onclick="closeUserModal()" class="text-text-muted hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <form id="userForm" onsubmit="handleUserSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" name="id" id="user_id">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-text-muted">Username</label>
+                        <input type="text" name="username" id="user_username" required class="dark-input w-full px-3 py-2 rounded-lg text-sm" placeholder="เช่น it01">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-text-muted">ชื่อ-นามสกุล</label>
+                        <input type="text" name="full_name" id="user_full_name" required class="dark-input w-full px-3 py-2 rounded-lg text-sm" placeholder="ชื่อ สกุล">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-text-muted">ระดับสิทธิ์</label>
+                        <select name="role" id="user_role" required class="dark-input w-full px-3 py-2 rounded-lg text-sm">
+                            <option value="user">User (ผู้ใช้ทั่วไป)</option>
+                            <option value="staff">Staff (เจ้าหน้าที่ IT)</option>
+                            <option value="admin">Admin (ผู้ดูแลระบบ)</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-medium text-text-muted">หน่วยงาน/ตำแหน่ง</label>
+                        <select name="position_id" id="user_position_id" class="dark-input w-full px-3 py-2 rounded-lg text-sm">
+                            <option value="">ไม่ระบุ</option>
+                            <?php foreach ($positions as $p): ?>
+                            <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['position_name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="space-y-1 md:col-span-2">
+                        <label class="text-xs font-medium text-text-muted">เบอร์โทรศัพท์</label>
+                        <input type="text" name="phone" id="user_phone" class="dark-input w-full px-3 py-2 rounded-lg text-sm" placeholder="08x-xxxxxxx">
+                    </div>
+                </div>
+                <div class="pt-4 border-t border-white/10 flex justify-end gap-3">
+                    <button type="button" onclick="closeUserModal()" class="px-4 py-2 rounded-lg text-sm text-text-muted hover:text-white transition-colors">ยกเลิก</button>
+                    <button type="submit" class="bg-ocean-500 hover:bg-ocean-400 text-white px-6 py-2 rounded-lg text-sm font-bold transition-all">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast" class="toast flex items-center">
         <i class="fa-solid fa-circle-check text-status-normal text-xl mr-3"></i>
@@ -906,142 +990,6 @@ header('Content-Type: text/html; charset=utf-8');
     </div>
 
     <script>
-        // --- Navigation Logic ---
-        function switchView(viewId) {
-            // Show loader briefly to simulate page transition
-            const loader = document.getElementById('page-loader');
-            loader.classList.remove('hidden');
-
-            // Update Nav styling
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('text-white', 'bg-ocean-700', 'border-l-4', 'border-ocean-500');
-                btn.classList.add('text-text-muted');
-                if (btn.dataset.target === viewId) {
-                    btn.classList.remove('text-text-muted');
-                    btn.classList.add('text-white', 'bg-ocean-700', 'border-l-4', 'border-ocean-500');
-
-                    // Update mobile title
-                    const titleText = btn.querySelector('span').innerText;
-                    document.getElementById('mobile-page-title').innerText = titleText;
-                }
-            });
-
-            setTimeout(() => {
-                                // Hide all views
-                document.querySelectorAll('.view-section').forEach(section => {
-                    section.classList.add('hidden');
-                });
-                // Show selected view
-                document.getElementById(`view-${viewId}`).classList.remove('hidden');
-                loader.classList.add('hidden');
-
-                // Re-render charts if dashboard
-                if (viewId === 'dashboard' && !chartsRendered) {
-                    initCharts();
-                }
-            }, 300); // 300ms fake loading
-        }
-
-        // --- Chart.js Initialization ---
-        let chartsRendered = false;
-        function initCharts() {
-            // Configuration for Dark Theme
-            Chart.defaults.color = '#94a3b8';
-            Chart.defaults.font.family = "'Sarabun', sans-serif";
-            Chart.defaults.scale.grid.color = 'rgba(255,255,255,0.05)';
-
-            // Department Bar Chart
-            const ctxDept = document.getElementById('deptChart').getContext('2d');
-            new Chart(ctxDept, {
-                type: 'bar',
-                data: {
-                    labels: ['ER', 'OPD', 'IPD', 'การเงิน', 'รังสีวิทยา', 'ห้องแล็บ'],
-                    datasets: [{
-                        label: 'จำนวนแจ้งซ่อม (ครั้ง)',
-                        data: [45, 38, 25, 15, 10, 9],
-                        backgroundColor: '#00b4d8', // Ocean Accent
-                        borderRadius: 4,
-                        barPercentage: 0.6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
-                }
-            });
-
-            // Issue Types Doughnut Chart
-            const ctxIssue = document.getElementById('issueChart').getContext('2d');
-            new Chart(ctxIssue, {
-                type: 'doughnut',
-                data: {
-                    labels: ['พิมพ์ไม่ออก/กระดาษติด', 'โปรแกรมค้าง/Error', 'เปิดเครื่องไม่ติด', 'Network/Internet', 'อื่นๆ'],
-                    datasets: [{
-                        data: [35, 25, 15, 15, 10],
-                        backgroundColor: [
-                            '#48cae4', // Light Blue
-                            '#00b4d8', // Primary Cyan
-                            '#ff9f43', // Warning
-                            '#10b981', // Emerald
-                            '#22426c'  // Dark Blue
-                        ],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 12 } }
-                    }
-                }
-            });
-
-            chartsRendered = true;
-        }
-
-        // --- Simulated Actions ---
-        function simulateQRScan() {
-            const input = document.getElementById('assetIdInput');
-            const info = document.getElementById('assetInfo');
-
-            input.value = "Scanning...";
-            input.classList.add('animate-pulse');
-
-            setTimeout(() => {
-                input.classList.remove('animate-pulse');
-                input.value = "PC-OPD-045";
-                info.classList.remove('hidden'); // Show linked asset info
-            }, 800);
-        }
-
-        async function handleFormSubmit(e) {
-            e.preventDefault();
-            const form = e.target;
-            const formData = new FormData(form);
-            formData.append('reporter_id', '<?= $user['id'] ?>');
-
-            try {
-                const response = await fetch('/api/create_ticket.php', {
-                    method: 'POST',
-                    body: formData
-                });
-                const result = await response.json();
-                if (result.success) {
-                    showToast("สร้าง Ticket สำเร็จ!");
-                    setTimeout(() => window.location.reload(), 1500);
-                } else {
-                    alert('Error: ' + result.error);
-                }
-            } catch (err) {
-                console.error(err);
-                alert('Connection Error');
-            }
-        }
-
         // --- User Management Actions ---
         async function updateUserRole(userId, newRole) {
             try {
@@ -1098,44 +1046,58 @@ header('Content-Type: text/html; charset=utf-8');
             }
         }
 
-        function showToast(message) {
-            const toast = document.getElementById('toast');
-            const msgEl = document.getElementById('toast-message');
-            if (toast && msgEl) {
-                msgEl.innerText = message;
-                toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 3000);
-            } else {
-                alert(message);
-            }
-        }
-
         // Initialize first view
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize Tom Select
-            new TomSelect("#deptSelect", {
-                create: false,
-                sortField: {
-                    field: "text",
-                    direction: "asc"
-                },
-                placeholder: "พิมพ์ค้นหาหน่วยงาน...",
-                allowEmptyOption: false,
-            });
+            if (document.getElementById('deptSelect')) {
+                new TomSelect("#deptSelect", {
+                    create: false,
+                    sortField: { field: "text", direction: "asc" },
+                    placeholder: "พิมพ์ค้นหาหน่วยงาน...",
+                    allowEmptyOption: false,
+                });
+            }
 
             <?php if ($user['role'] === 'user'): ?>
-            switchView('create-ticket');
+            if (typeof switchView === 'function') switchView('create-ticket');
             <?php else: ?>
-            switchView('dashboard');
+            if (typeof switchView === 'function') switchView('dashboard');
             <?php endif; ?>
         });
-
     </script>
     <!-- Real API Integration -->
     <script>
-    const CURRENT_USER = <?= json_encode($user) ?>;
-    const IS_ADMIN = <?= $user['role'] === 'admin' ? 'true' : 'false' ?>;
+    window.CURRENT_USER = <?= json_encode($user) ?>;
+    window.IS_ADMIN = <?= $user['role'] === 'admin' ? 'true' : 'false' ?>;
+    window.STAFF_LIST = <?= json_encode($staff_list) ?>;
+    
+    window.deleteTicket = async function(id) {
+        if (!confirm('⚠️ ยืนยันการลบรายการแจ้งซ่อมนี้อย่างถาวร?')) return;
+        
+        try {
+            const res = await fetch('/api/tickets.php', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            const json = await res.json();
+            if (json.success) {
+                if (typeof showToast === 'function') showToast('✅ ลบรายการแจ้งซ่อมเรียบร้อยแล้ว');
+                else alert('✅ ลบรายการแจ้งซ่อมเรียบร้อยแล้ว');
+                
+                // รีโหลดรายการถ้าอยู่ในหน้า ticket list
+                if (typeof loadTickets === 'function') loadTickets();
+                else window.location.reload();
+            } else {
+                if (typeof showToast === 'function') showToast('❌ ' + (json.error || 'ไม่สามารถลบได้'), true);
+                else alert('❌ ' + (json.error || 'ไม่สามารถลบได้'));
+            }
+        } catch(e) {
+            if (typeof showToast === 'function') showToast('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ', true);
+            else alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        }
+    };
     </script>
-    <script src="/js/app.js"></script>
+    <script src="/js/app.js?v=<?= time() ?>"></script>
 </body>
 </html>

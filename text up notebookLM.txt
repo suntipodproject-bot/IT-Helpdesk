@@ -1,0 +1,152 @@
+README.md: อธิบายภาพรวมโปรเจค ความต้องการ และฟีเจอร์ต่างๆ
+TROUBLESHOOTING_LOG.md: บันทึกปัญหาที่พบและวิธีการแก้ไข (Error Logs & Solutions)
+1. [NEW] 
+
+README.md
+(ไฟล์นี้จะเก็บข้อมูลพื้นฐานและจุดประสงค์ของโปรเจค)
+
+markdown
+# IT Service Helpdesk System
+ระบบบริหารจัดการงานแจ้งซ่อมอุปกรณ์ไอทีและครุภัณฑ์ สำหรับหน่วยงานหรือโรงพยาบาล
+## 🎯 วัตถุประสงค์ (Goal)
+เพื่อลดความซ้ำซ้อนในการแจ้งซ่อม เพิ่มประสิทธิภาพในการติดตามงานของช่างไอที และเก็บสถิติการซ่อมเพื่อนำไปวิเคราะห์การใช้งานครุภัณฑ์
+## 👥 ผู้ใช้งานระบบ (Target Users)
+1. **General User (ผู้ใช้ทั่วไป):** แจ้งซ่อมผ่านฟอร์ม, ติดตามสถานะงานของตนเอง, สแกน QR Code ครุภัณฑ์เพื่อแจ้งซ่อม
+2. **IT Staff (ช่าง/เจ้าหน้าที่):** รับงานซ่อม, อัปเดตสถานะ (กำลังซ่อม/เสร็จสิ้น), บันทึกหมายเหตุการซ่อม
+3. **Admin (ผู้ดูแลระบบ):** จัดการสิทธิ์ผู้ใช้งาน (RBAC), ลบรายการที่ผิดพลาด, ดู Dashboard ภาพรวมสถิติ และส่งออกรายงาน (Excel)
+## 🛠️ ฟีเจอร์สำคัญ (Key Features)
+- **Smart Form:** ระบบแจ้งซ่อมที่รองรับการระบุระดับความสำคัญ (Priority) และการป้องกันการกดส่งซ้ำ (Duplicate Prevention)
+- **Asset Integration:** เชื่อมโยงกับระบบครุภัณฑ์ สามารถดึงข้อมูลสเปกเครื่องได้อัตโนมัติ
+- **Dashboard:** แสดงกราฟสถิติแยกตามแผนกและอาการเสียยอดฮิต (Chart.js)
+- **Notification System:** แจ้งเตือนทันทีผ่าน Telegram, Discord และ Line Notify เมื่อมีเคสใหม่
+- **Workflow Management:** ระบบจัดการสถานะงาน (Pending -> Ongoing -> Completed)
+- **Role-Based Access Control (RBAC):** แยกเมนูการใช้งานตามระดับสิทธิ์ (Admin, Staff, User)
+## 💻 เทคโนโลยีที่ใช้ (Tech Stack)
+- **Backend:** PHP 8.x (Vanilla) + MariaDB/MySQL
+- **Frontend:** HTML5, Tailwind CSS, JavaScript (ES6)
+- **Libraries:** Chart.js (กราฟ), Tom Select (Dropdown ค้นหา), FontAwesome 6
+- **Deployment:** Docker & Docker Compose
+2. [NEW] 
+
+TROUBLESHOOTING_LOG.md
+(ไฟล์นี้จะเก็บประวัติการแก้ปัญหา เพื่อเป็นบทเรียนในอนาคต)
+
+markdown
+# 📔 Error Logs & Solutions
+บันทึกประวัติปัญหาที่พบและการแก้ไขในโปรเจค IT Helpdesk
+---
+### 🟢 Issue 1: การแจ้งซ่อมซ้ำซ้อน (Duplicate Tickets)
+- **อาการ:** ระบบตอบสนองช้าทำให้ผู้ใช้เผลอกดปุ่ม "ส่งเรื่อง" หลายครั้ง ส่งผลให้มีรายการแจ้งซ่อมเรื่องเดียวกันขึ้นมาซ้ำๆ
+- **สาเหตุ:** ขาดการล็อค UI ในขณะประมวลผล และขาดการตรวจสอบข้อมูลซ้ำที่ฝั่ง Server
+- **การแก้ไข:**
+  - **Frontend:** เพิ่มตัวแปร `isSubmitting` เพื่อ Disable ปุ่มทันทีที่กด และแสดง Loader ทับทั้งหน้าจอ
+  - **Backend:** เพิ่มระบบ "Duplicate Check" ใน API โดยตรวจสอบชื่อผู้แจ้งและอาการเสีย หากพบข้อมูลเดิมภายใน 60 วินาที ระบบจะปฏิเสธการบันทึก (409 Conflict)
+### 🟢 Issue 2: ฟังก์ชันลบรายการไม่ทำงาน (Delete Confirmation Fail)
+- **อาการ:** Admin กดปุ่มลบ (ถังขยะ) แล้วไม่มีหน้าต่างยืนยัน (Confirm) ขึ้นมา และลบไม่ได้
+- **สาเหตุ:** ปัญหาเรื่องลำดับการโหลด JavaScript (Scope) และการแคชไฟล์ของเบราว์เซอร์
+- **การแก้ไข:**
+  - ย้ายฟังก์ชัน `deleteTicket` มาไว้ในหน้า `index.php` โดยตรงเพื่อความชัวร์ (Inline Script)
+  - เพิ่มระบบ Script Versioning (`?v=timestamp`) เพื่อบังคับเบราว์เซอร์โหลดไฟล์ JS ใหม่เสมอ
+  - กำหนดฟังก์ชันไว้ที่ `window.deleteTicket` เพื่อให้เรียกใช้ได้จากทุกที่
+### 🟢 Issue 3: ระบบค้างหน้า Loading ตอนส่งข้อมูล (Hang on Submit)
+- **อาการ:** กดส่งแจ้งซ่อมแล้วตัวหมุน (Spinner) ค้างไม่ยอมปิดหน้าจอ
+- **สาเหตุ:** โค้ดหลังบ้านเรียกใช้ CURL เพื่อแจ้งเตือนไปยังระบบอื่น (Telegram/Line) ผ่าน URL `localhost` ซึ่งในบางสภาพแวดล้อม (เช่น Docker) ทำให้เกิดการรอคอยจน Timeout (5-15 วินาที)
+- **การแก้ไข:**
+  - เปลี่ยนจากการเรียก CURL ภายใน มาเป็นการเรียกใช้ฟังก์ชันแจ้งเตือนโดยตรง (`require_once`)
+  - ใช้เทคนิค **Non-blocking Response** โดยให้ PHP ตอบกลับ Browser ทันทีว่า "สำเร็จ" แล้วค่อยประมวลผลการส่งแจ้งเตือนในเบื้องหลัง (Background Process)
+### 🟢 Issue 4: ข้อมูลไม่ขึ้น/แสดงผลผิดพลาด (Schema Mismatch)
+- **อาการ:** หน้า Ticket List ขึ้นว่า "เกิดข้อผิดพลาด" และหน้าแจ้งซ่อมแจ้งเตือนว่า "กรอกข้อมูลไม่ครบ" ทั้งที่กรอกแล้ว
+- **สาเหตุ:** ชื่อคอลัมน์ในฐานข้อมูลจริง (`init.sql`) ไม่ตรงกับโค้ดที่เขียน (เช่น `problem_description` vs `description` และสถานะ `ongoing` vs `in_progress`)
+- **การแก้ไข:**
+  - ทำการ Sync ชื่อคอลัมน์และค่าสถานะ (Enum) ทั้งหมดในไฟล์ `tickets.php` และ `app.js` ให้ตรงกับ `init.sql`
+  - ใช้ `AS description` ใน SQL Query เพื่อให้ฝั่ง Frontend ทำงานได้เหมือนเดิมโดยไม่ต้องแก้ Logic ใหญ่
+มีสรุป การConfiguration Ledger: ประวัติการปรับแต่งค่าต่างๆไหม
+
+
+ได้เลยครับ ผมสรุปประวัติการตั้งค่าสำคัญๆ (Configuration Ledger) ของระบบให้ครับ ไฟล์นี้จะช่วยให้ NotebookLM เข้าใจว่าเรามีการปรับแต่ง "ค่าคงที่" (Constants) และ "สภาพแวดล้อม" (Environment) อย่างไรบ้างครับ
+
+3. [NEW] 
+
+CONFIGURATION_LOG.md
+(ไฟล์บันทึกการปรับแต่งระบบและค่าคอนฟิกต่างๆ)
+
+markdown
+# ⚙️ Configuration Ledger
+ประวัติการปรับแต่งค่าคอนฟิกูเรชัน (Configuration) และสภาพแวดล้อมของระบบ IT Helpdesk
+---
+### 🗄️ 1. Database Configuration (การตั้งค่าฐานข้อมูล)
+- **Host Update:** เปลี่ยนจาก `localhost` เป็น `helpdesk-db` เพื่อให้โค้ด PHP ใน Docker Container สามารถมองเห็น Container ของ MariaDB ได้ผ่าน Docker Network
+- **Port:** ใช้พอร์ตมาตรฐาน `3306` ภายในเน็ตเวิร์ก
+- **Credentials:** กำหนด User: `helpdesk` / Pass: `helpdesk1234` / DB: `helpdesk_db`
+### 🔔 2. Notification Settings (การตั้งค่าการแจ้งเตือน)
+- **Telegram Bot:**
+  - เปิดใช้งาน (`TELEGRAM_ENABLED: true`)
+  - ตั้งค่า Bot Token และ Chat ID (Group ID) ของผู้ใช้งานจริงเพื่อให้แจ้งเตือนเข้ากลุ่มได้ทันที
+  - ปรับ Timeout ของ CURL เป็น 5-8 วินาที เพื่อป้องกันการค้าง
+- **Discord & Line Notify:**
+  - ปิดใช้งานไว้ก่อน (`false`) จนกว่าจะมีการใส่ Token จริง เพื่อลดภาระการประมวลผล (Overhead)
+- **Optimization:** ปรับจากระบบ Webhook CURL (localhost) มาเป็นการเรียกใช้ Class/Function โดยตรงภายในเครื่อง
+### 🌐 3. URL & Port Mapping
+- **Base URL:** กำหนดเป็น `http://localhost:9090` ตามการแมปพอร์ตของ Docker Compose (ภายนอก: 9090 -> ภายใน: 80)
+- **Uploads:** กำหนด Path การเก็บไฟล์รูปภาพแจ้งซ่อมไว้ที่ `/src/uploads/` และทำ Volume Mapping ใน Docker เพื่อให้ไฟล์ไม่หายเมื่อ Restart Container
+### ⚡ 4. PHP Runtime Configuration
+- **Non-blocking Process:** มีการเพิ่มการตั้งค่าในระดับ Code เพื่อให้ User ไม่ต้องรอการทำงานของ Server:
+  - `ignore_user_abort(true)`: ให้ PHP ทำงานต่อแม้ผู้ใช้จะปิดหน้าจอหรือเปลี่ยนหน้าไปแล้ว
+  - `Connection: close` & `Content-Length`: ส่ง Header เพื่อบอก Browser ว่ารับข้อมูลครบแล้วและปิดการเชื่อมต่อทันที
+- **Time Limit:** ตั้งค่า `set_time_limit(30)` สำหรับงาน Background เพื่อความปลอดภัย
+### 🔐 5. Security & RBAC
+- **Session Timeout:** ตั้งค่าไว้ที่ 480 นาที (8 ชั่วโมง) เพื่อให้เจ้าหน้าที่ทำงานได้ต่อเนื่องตลอดวันโดยไม่ต้อง Login ใหม่บ่อยๆ
+- **Bcrypt:** กำหนดมาตรฐานการ Hash รหัสผ่านผู้ใช้งานด้วย `PASSWORD_BCRYPT`
+1. ไฟล์โครงสร้างฐานข้อมูล (Database Schema)
+ไฟล์นี้คือ "กระดูกสันหลัง" บอกว่าระบบเราเก็บข้อมูลอะไรบ้าง
+
+docker/mysql/init.sql: สำคัญที่สุด เพราะบอกชื่อตารางและชื่อคอลัมน์ทั้งหมด (ที่เคยมีปัญหาชื่อไม่ตรงกัน ก็ดูจากไฟล์นี้เป็นหลักครับ)
+2. ไฟล์ตรรกะหลัก (Core Business Logic)
+ไฟล์ที่สั่งว่า "ถ้ากดแบบนี้ ให้ทำอะไร" หรือ "ส่งข้อมูลยังไง"
+
+src/api/tickets.php: หัวใจของระบบแจ้งซ่อม (การเพิ่ม, ลบ, แก้ไข, ป้องกันการส่งซ้ำ, และการทำ Background Job)
+src/js/app.js: หัวใจของฝั่งหน้าจอ (การเปลี่ยนหน้า, การโหลดข้อมูลมาแสดง, และการควบคุม Spinner)
+src/includes/notifications.php: ตรรกะการแจ้งเตือนทั้งหมด (Telegram, Line, Discord)
+src/includes/auth.php: ระบบความปลอดภัยและการเช็คสิทธิ์ (Admin/Staff/User)
+3. ไฟล์ตั้งค่าโครงสร้าง (Infrastructure & Config)
+ไฟล์ที่บอกว่า "แอปนี้รันยังไง" และ "เชื่อมต่อกับอะไร"
+
+docker-compose.yml: บอกภาพรวมว่ามีเครื่อง Server กี่เครื่อง (PHP, MySQL) และเชื่อมต่อพอร์ตอะไร
+src/includes/config.php: ไฟล์รวมการตั้งค่าทั้งหมด (แนะนำให้ลบ Token/Password ส่วนตัวออกก่อนอัปโหลดตามที่คุณบอกครับ)
+src/includes/db.php: วิธีการที่แอปเชื่อมต่อกับฐานข้อมูล
+💡 คำแนะนำเพิ่มเติมสำหรับการอัปโหลด:
+ไม่ต้องเอาขึ้น: พวกไฟล์รูปภาพ (.jpg, .png), โฟลเดอร์ node_modules (ถ้ามี), หรือไฟล์ CSS ยาวๆ เพราะ NotebookLM จะไม่ได้ใช้ส่วนนั้นในการวิเคราะห์ตรรกะ
+สิ่งที่จะได้: เมื่อคุณอัปโหลดไฟล์เหล่านี้ (บวกกับ 3 ไฟล์สรุปที่ผมเขียนให้ก่อนหน้า) คุณจะสามารถถาม NotebookLM ได้เลยว่า:
+"ถ้าอยากเพิ่มฟีเจอร์ให้ Admin แก้ไขอาการเสียย้อนหลังได้ ต้องแก้ที่ไฟล์ไหนบ้าง?"
+"ระบบป้องกันการส่งซ้ำทำงานยังไง อธิบายให้ฟังหน่อย"
+"ช่วยเขียนโค้ดเพิ่มปุ่ม 'รับงาน' ให้ Staff หน่อย"
+✅ 1. โครงสร้างฐานข้อมูล (Database)
+SQL Schema Export: อยู่ที่ไฟล์ docker/mysql/init.sql (มีครบทั้งโครงสร้างตารางและความสัมพันธ์)
+Dictionary ข้อมูล: อยู่ใน init.sql (ผมเขียน Comment กำกับไว้ที่ท้ายบรรทัดคอลัมน์สำคัญๆ แล้วครับ เช่น สถานะต่าง ๆ)
+Query ตัวอย่าง: มีอยู่ใน src/api/tickets.php (ตรรกะการดึงข้อมูลและกรองข้อมูล) และใน src/index.php (ส่วนการดึงสถิติมาทำ Dashboard)
+✅ 2. เอกสารทางเทคนิค (Technical Docs)
+API Documentation: แม้จะไม่มีไฟล์แยก แต่โค้ดใน src/api/tickets.php ถูกจัดระเบียบให้เข้าใจง่าย (GET/POST/PUT/DELETE) คุณสามารถให้ NotebookLM อ่านจากโค้ดได้เลยครับ
+Library Specifics: เราใช้ Tom Select และ Chart.js ซึ่งเป็น Library ยอดนิยม AI ส่วนใหญ่รู้จักดีอยู่แล้วครับ
+✅ 3. ไฟล์ "หัวใจ" ของ Source Code
+Core Logic:
+src/api/tickets.php (หัวใจการทำงานหลังบ้าน)
+src/js/app.js (หัวใจการทำงานหน้าบ้าน)
+src/includes/notifications.php (ระบบแจ้งเตือน)
+src/includes/auth.php (ระบบจัดการสิทธิ์)
+Configuration Files:
+src/includes/config.php (รวมการตั้งค่าทั้งหมด)
+docker-compose.yml (การตั้งค่า Infrastructure)
+README: ผมเพิ่งสร้างให้สดๆ ร้อนๆ คือไฟล์ README.md ครับ
+✅ 4. บันทึกการแก้ไข (Logs & History)
+Error Logs & Solutions: ผมสร้างให้แล้วในไฟล์ TROUBLESHOOTING_LOG.md (บันทึกเคสค้าง, เคสส่งซ้ำ, เคสชื่อคอลัมน์ไม่ตรง)
+Configuration Ledger: ผมสร้างให้แล้วในไฟล์ CONFIGURATION_LOG.md (บันทึกการเปลี่ยน Host DB, การเปิด Telegram)
+🚀 สรุปสิ่งที่คุณควรทำตอนนี้:
+หากคุณจะอัปโหลดขึ้น NotebookLM ผมแนะนำให้ก๊อปปี้ไฟล์เหล่านี้ขึ้นไปครับ:
+
+README.md
+TROUBLESHOOTING_LOG.md
+CONFIGURATION_LOG.md
+docker/mysql/init.sql
+src/api/tickets.php
+src/js/app.js
+src/includes/config.php

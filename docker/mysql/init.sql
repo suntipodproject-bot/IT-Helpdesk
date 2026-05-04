@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS users (
     phone       VARCHAR(20),
     line_token  VARCHAR(255) COMMENT 'Personal Line Notify Token',
     is_active   TINYINT(1) NOT NULL DEFAULT 1,
+    must_change_password TINYINT(1) NOT NULL DEFAULT 0,
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
