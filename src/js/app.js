@@ -450,7 +450,7 @@ window.switchView = function(viewId) {
         // Load real data per view
         if (viewId === 'dashboard')   loadDashboard();
         if (viewId === 'ticket-list') loadTickets();
-        if (viewId === 'my-jobs')     loadTickets({ assigned_to: window.CURRENT_USER.id });
+        if (viewId === 'my-jobs')     loadTickets({ assigned_to: 'me' });
         if (viewId === 'departments') loadDepartments();
         if (viewId === 'assets')      loadAssets();
     }, 300);

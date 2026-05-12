@@ -181,10 +181,31 @@ if ($method === 'PUT') {
         }
     }
     if (isset($data['assigned_to'])) {
+        $assignedTo = $data['assigned_to'];
+        if ($assignedTo === 'auto') {
+            // Find staff with minimum active tickets
+            $autoSql = "SELECT u.id, COUNT(t.id) as active_tickets 
+                        FROM users u 
+                        LEFT JOIN tickets t ON u.id = t.assigned_to AND t.status IN ('pending', 'ongoing') 
+                        WHERE u.role IN ('admin', 'staff') AND u.is_active = 1 
+                        GROUP BY u.id 
+                        ORDER BY active_tickets ASC, u.id ASC LIMIT 1";
+            $autoStmt = $db->query($autoSql);
+            $bestStaff = $autoStmt->fetch();
+            if ($bestStaff) {
+                $assignedTo = $bestStaff['id'];
+            } else {
+                $assignedTo = null; // Failsafe if no staff
+            }
+        }
+
         $sets[]   = 'assigned_to = ?';
-        $params[] = $data['assigned_to'] ?: null;
+        $params[] = $assignedTo ?: null;
         // Auto set in_progress when assigned
         $sets[]   = "status = IF(status='pending','ongoing',status)";
+        
+        // Update $data array so notification works correctly below
+        $data['assigned_to'] = $assignedTo;
     }
     if (!empty($data['asset_code'])) {
         $ast_stmt = $db->prepare("SELECT id FROM assets WHERE asset_code = ? LIMIT 1");

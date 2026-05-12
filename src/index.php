@@ -544,12 +544,12 @@ header('Content-Type: text/html; charset=utf-8');
 
                                 <!-- เบอร์ติดต่อ -->
                                 <div class="space-y-2">
-                                    <label class="text-sm font-medium text-text-muted block">เบอร์ติดต่อกลับ <span class="text-status-critical">*</span></label>
+                                    <label class="text-sm font-medium text-text-muted block">เบอร์ติดต่อกลับ</label>
                                     <div class="relative">
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-ocean-400">
                                             <i class="fa-solid fa-phone"></i>
                                         </div>
-                                        <input type="text" name="reporter_phone" required
+                                        <input type="text" name="reporter_phone"
                                             class="dark-input w-full pl-10 pr-3 py-2.5 rounded-lg text-sm"
                                             value="<?= htmlspecialchars($user['phone'] ?? '') ?>"
                                             placeholder="ระบุเบอร์ภายในหรือเบอร์ส่วนตัว">
@@ -573,7 +573,7 @@ header('Content-Type: text/html; charset=utf-8');
                                             <option value="urgent" class="bg-ocean-800 text-status-urgent">🟠 เร่งด่วน
                                                 (ทำงานไม่ได้, ไม่มีเครื่องสำรอง)</option>
                                             <option value="normal" class="bg-ocean-800 text-status-normal">🟢 ปกติ
-                                                (ทำงานช้า, ปรึกษาการใช้งาน)</option>
+                                                (ทำงานช้า, ปรึกษาการใช้งาน,ขอรายงาน,งานอื่นๆ)</option>
                                         </select>
                                         <div
                                             class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-text-muted">
@@ -746,13 +746,7 @@ header('Content-Type: text/html; charset=utf-8');
                                 </div>
                                 
                                 <?php if ($user['role'] !== 'user' && $tk['status'] === 'pending'): ?>
-                                <select onchange="assignTicket(<?= $tk['id'] ?>, this.value)"
-                                    class="bg-ocean-800 text-xs text-white border border-white/10 rounded px-2 py-1 focus:outline-none focus:border-ocean-500">
-                                    <option>จ่ายงาน...</option>
-                                    <?php foreach ($users_list as $staff): if ($staff['role'] !== 'user'): ?>
-                                    <option value="<?= $staff['id'] ?>"><?= htmlspecialchars($staff['full_name']) ?></option>
-                                    <?php endif; endforeach; ?>
-                                </select>
+                                <button onclick="openAssignModal(<?= $tk['id'] ?>)" class="bg-ocean-700 hover:bg-ocean-600 text-white text-xs px-3 py-1.5 rounded transition-colors border border-white/10"><i class="fa-solid fa-user-plus mr-1"></i> จ่ายงาน</button>
                                 <?php elseif ($tk['assignee_name']): ?>
                                 <div class="flex items-center gap-2">
                                     <div class="w-6 h-6 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center">
@@ -1329,6 +1323,34 @@ header('Content-Type: text/html; charset=utf-8');
             }
         });
     </script>
+    <!-- Assign Modal -->
+    <div id="assignModal" class="hidden fixed inset-0 bg-ocean-900/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md p-6 relative">
+            <button onclick="closeAssignModal()" class="absolute top-4 right-4 text-text-muted hover:text-white transition-colors">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <h3 class="text-xl font-bold text-white mb-4">จ่ายงาน (Assign Ticket)</h3>
+            <p class="text-sm text-text-muted mb-4">เลือกเจ้าหน้าที่รับผิดชอบ หรือสุ่มอัตโนมัติตามภาระงาน (งานในมือ)</p>
+            
+            <input type="hidden" id="assignTicketId" value="">
+            
+            <div id="assignLoading" class="hidden text-center py-4">
+                <i class="fa-solid fa-spinner fa-spin text-ocean-500 text-2xl"></i>
+                <p class="text-sm text-text-muted mt-2">กำลังโหลดข้อมูลเจ้าหน้าที่...</p>
+            </div>
+
+            <div id="assignStaffList" class="space-y-2 max-h-60 overflow-y-auto mb-4 custom-scrollbar pr-2">
+                <!-- Staff list will be injected here -->
+            </div>
+
+            <div class="flex gap-3 pt-4 border-t border-white/10">
+                <button onclick="confirmAssignTicket('auto')" class="flex-1 bg-gradient-to-r from-ocean-600 to-ocean-500 hover:from-ocean-500 hover:to-ocean-400 text-white font-medium py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-bolt"></i> Auto Assign
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Real API Integration (Moved up and fixed path) -->
     <script>
         window.CURRENT_USER = <?= json_encode($user) ?>;
@@ -1336,5 +1358,6 @@ header('Content-Type: text/html; charset=utf-8');
         window.STAFF_LIST = <?= json_encode($staff_list) ?>;
     </script>
     <script src="js/app.js?v=<?= time() ?>"></script>
+    <script src="js/assign_modal.js?v=<?= time() ?>"></script>
 </body>
 </html>
