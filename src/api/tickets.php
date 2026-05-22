@@ -18,6 +18,12 @@ if ($method === 'GET') {
     $where  = ['1=1'];
     $params = [];
 
+    // จำเป็น: หากเป็น role 'user' ต้องเห็นเฉพาะ ticket ที่ตัวเองเป็นคนสร้างเท่านั้น
+    if ($user['role'] === 'user') {
+        $where[]  = 't.reporter_id = ?';
+        $params[] = $user['id'];
+    }
+
     if (!empty($_GET['status'])) {
         $where[]  = 't.status = ?';
         $params[] = $_GET['status'];

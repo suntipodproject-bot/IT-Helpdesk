@@ -6,7 +6,7 @@ requireLogin();
 $user = currentUser();
 
 // If no need to change password, redirect to index
-if (!$user['must_change_password'] && false) { // Skip for now to test
+if (!($user['must_change_password'] ?? false) && false) { // Skip for now to test
     // Actually, I need to fetch the latest user data to be sure
     $db = getDB();
     $stmt = $db->prepare("SELECT must_change_password FROM users WHERE id = ?");

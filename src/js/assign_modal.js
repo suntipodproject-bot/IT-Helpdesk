@@ -69,11 +69,15 @@ async function confirmAssignTicket(staffId) {
             closeAssignModal();
             
             // Refresh the appropriate view
-            const myJobsView = document.getElementById('view-my-jobs');
-            if (myJobsView && !myJobsView.classList.contains('hidden')) {
-                loadTickets({ assigned_to: 'me' });
+            if (typeof window.refreshCurrentTicketsView === 'function') {
+                window.refreshCurrentTicketsView();
             } else {
-                loadTickets();
+                const myJobsView = document.getElementById('view-my-jobs');
+                if (myJobsView && !myJobsView.classList.contains('hidden')) {
+                    loadTickets({ assigned_to: 'me' });
+                } else {
+                    loadTickets();
+                }
             }
         } else {
             showToast('❌ ' + (json.error || 'เกิดข้อผิดพลาด'), true);
