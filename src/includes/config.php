@@ -3,7 +3,7 @@
 date_default_timezone_set('Asia/Bangkok');
 
 // Database
-define('DB_HOST',     'helpdesk-db');
+define('DB_HOST',     'it-helpdesk-db');
 define('DB_PORT',     '3306');
 define('DB_NAME',     'helpdesk_db');
 define('DB_USER',     'helpdesk');
@@ -46,7 +46,7 @@ define('LINE_NOTIFY_TOKEN',     'YOUR_LINE_NOTIFY_TOKEN');
 define('APP_NAME',    'IT Service Helpdesk');
 define('APP_VERSION', '1.0.0');
 define('UPLOAD_DIR',  __DIR__ . '/../uploads/');
-define('BASE_URL',    'http://localhost:9090');
+define('BASE_URL',    'http://localhost:9092');
 
 // Session timeout (minutes)
 define('SESSION_TIMEOUT', 480); // 8 hours
