@@ -37,7 +37,7 @@ try {
     // 3. Reset Password
     if (isset($data['reset_password']) && $data['reset_password'] === true) {
         $newPassword = password_hash('password', PASSWORD_DEFAULT);
-        $stmt = $db->prepare("UPDATE users SET password = ? WHERE id = ?");
+        $stmt = $db->prepare("UPDATE users SET password = ?, must_change_password = 1 WHERE id = ?");
         $stmt->execute([$newPassword, $userId]);
     }
 
