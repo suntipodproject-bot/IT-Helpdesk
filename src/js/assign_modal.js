@@ -12,13 +12,13 @@ async function openAssignModal(ticketId) {
         
         if (json.success) {
             const listHtml = json.data.map(staff => `
-                <div class="flex items-center justify-between p-3 rounded-lg border border-white/10 hover:bg-ocean-800 transition-colors cursor-pointer" onclick="confirmAssignTicket('${staff.id}')">
+                <div class="flex items-center justify-between p-3 rounded-lg border border-ocean-200 dark:border-white/10 hover:bg-ocean-50 dark:hover:bg-ocean-800 transition-colors cursor-pointer" onclick="confirmAssignTicket('${staff.id}')">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-ocean-700 flex items-center justify-center text-white font-bold text-xs">
                             ${staff.full_name.substring(0, 2)}
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-white">${escHtml(staff.full_name)}</p>
+                            <p class="text-sm font-medium text-slate-800 dark:text-white">${escHtml(staff.full_name)}</p>
                             <p class="text-xs text-text-muted">${staff.role === 'admin' ? 'หัวหน้า' : 'เจ้าหน้าที่'}</p>
                         </div>
                     </div>

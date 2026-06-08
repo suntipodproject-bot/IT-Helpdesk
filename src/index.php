@@ -33,6 +33,18 @@ if ($user['role'] === 'user') {
 }
 $all_tickets = $t_stmt->fetchAll();
 
+// Fetch Queue Dashboard Stats
+$queue_tickets_stmt = $db->query($ticket_query . " WHERE t.status IN ('pending', 'ongoing') ORDER BY t.created_at ASC");
+$queue_tickets = $queue_tickets_stmt->fetchAll();
+$queue_pending = 0;
+$queue_ongoing = 0;
+foreach ($queue_tickets as $qt) {
+    if ($qt['status'] === 'pending') $queue_pending++;
+    if ($qt['status'] === 'ongoing') $queue_ongoing++;
+}
+$queue_completed_today_stmt = $db->query("SELECT COUNT(*) FROM tickets WHERE status = 'completed' AND DATE(updated_at) = CURDATE()");
+$queue_completed_today = $queue_completed_today_stmt->fetchColumn();
+
 header('Content-Type: text/html; charset=utf-8');
 ?>
 <!DOCTYPE html>
@@ -430,12 +442,19 @@ header('Content-Type: text/html; charset=utf-8');
                 <nav class="p-4 space-y-2 flex flex-row md:flex-col overflow-x-auto md:overflow-visible">
                     <?php if ($user['role'] !== 'user'): ?>
                     <button onclick="switchView('dashboard')"
-                        class="nav-btn w-full flex items-center p-3 rounded-lg <?= $user['role'] !== 'user' ? 'text-white bg-ocean-700 border-l-4 border-ocean-500' : 'text-text-muted' ?> hover:text-white hover:bg-ocean-700 transition-colors active-nav"
+                        class="nav-btn w-full flex items-center p-3 rounded-lg <?= $user['role'] !== 'user' ? 'text-white bg-ocean-700 border-l-4 border-ocean-500 active-nav' : 'text-text-muted' ?> hover:text-white hover:bg-ocean-700 transition-colors"
                         data-target="dashboard">
                         <i class="fa-solid fa-chart-pie w-6"></i>
-                        <span class="ml-3 hidden md:inline">แดชบอร์ด</span>
+                        <span class="ml-3 hidden md:inline">แดชบอร์ดสรุป</span>
                     </button>
                     <?php endif; ?>
+
+                    <button onclick="switchView('queue')"
+                        class="nav-btn w-full flex items-center p-3 rounded-lg text-text-muted hover:text-white hover:bg-ocean-700 transition-colors"
+                        data-target="queue">
+                        <i class="fa-solid fa-list-ol w-6 text-ocean-400"></i>
+                        <span class="ml-3 hidden md:inline font-bold">คิวงาน IT</span>
+                    </button>
 
                     <button onclick="switchView('create-ticket')"
                         class="nav-btn w-full flex items-center p-3 rounded-lg <?= $user['role'] === 'user' ? 'text-white bg-ocean-700 border-l-4 border-ocean-500 active-nav' : 'text-text-muted' ?> hover:text-white hover:bg-ocean-700 transition-colors"
@@ -643,9 +662,114 @@ header('Content-Type: text/html; charset=utf-8');
                 </section>
 
                 <!-- ========================================== -->
+                <!-- VIEW 1.5: QUEUE DASHBOARD (All Users) -->
+                <!-- ========================================== -->
+                <section id="view-queue" class="view-section hidden space-y-6">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-white mb-1">สถานะคิวงาน IT</h2>
+                        <p class="text-text-muted text-sm">ตรวจสอบคิวงานทั้งหมดแบบ Real-time</p>
+                    </div>
+
+                    <!-- Queue Stat Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+                        <div class="glass-card p-5 border-l-4 border-l-status-urgent">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-text-muted text-sm font-medium mb-1">รอดำเนินการ</p>
+                                    <h3 class="text-3xl font-bold text-white"><?= $queue_pending ?></h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-lg bg-status-urgent/20 flex items-center justify-center text-status-urgent">
+                                    <i class="fa-solid fa-clock"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-5 border-l-4 border-l-ocean-500">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-text-muted text-sm font-medium mb-1">กำลังดำเนินการ</p>
+                                    <h3 class="text-3xl font-bold text-white"><?= $queue_ongoing ?></h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-lg bg-ocean-500/20 flex items-center justify-center text-ocean-500">
+                                    <i class="fa-solid fa-screwdriver-wrench"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass-card p-5 border-l-4 border-l-status-completed">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-text-muted text-sm font-medium mb-1">งานที่เสร็จวันนี้</p>
+                                    <h3 class="text-3xl font-bold text-white"><?= $queue_completed_today ?></h3>
+                                </div>
+                                <div class="w-10 h-10 rounded-lg bg-status-completed/20 flex items-center justify-center text-status-completed">
+                                    <i class="fa-solid fa-check-double"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Queue List -->
+                    <div class="glass-card overflow-hidden">
+                        <div class="px-6 py-4 border-b border-white/5 bg-ocean-800/50">
+                            <h3 class="text-sm font-bold text-white uppercase tracking-wider">คิวงานปัจจุบัน (<?= count($queue_tickets) ?> รายการ)</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-ocean-800 text-text-muted text-xs uppercase tracking-wider">
+                                    <tr>
+                                        <th class="px-6 py-4 font-semibold">เลขที่</th>
+                                        <th class="px-6 py-4 font-semibold">ผู้แจ้ง</th>
+                                        <th class="px-6 py-4 font-semibold">แผนกที่แจ้ง</th>
+                                        <th class="px-6 py-4 font-semibold">อาการ</th>
+                                        <th class="px-6 py-4 font-semibold">เวลาแจ้ง</th>
+                                        <th class="px-6 py-4 font-semibold">สถานะ</th>
+                                        <th class="px-6 py-4 font-semibold text-right">ผู้ดูแล</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/5">
+                                    <?php if(count($queue_tickets) === 0): ?>
+                                    <tr>
+                                        <td colspan="7" class="px-6 py-8 text-center text-text-muted">
+                                            <i class="fa-solid fa-check-circle text-4xl mb-3 text-status-completed opacity-50"></i>
+                                            <p>ยอดเยี่ยม! ไม่มีคิวงานค้างในระบบ</p>
+                                        </td>
+                                    </tr>
+                                    <?php else: ?>
+                                        <?php foreach ($queue_tickets as $qt): 
+                                            $statusClass = $qt['status'] === 'pending' ? 'badge-status-pending' : 'badge-status-progress';
+                                            $statusText = $qt['status'] === 'pending' ? 'รอดำเนินการ' : 'กำลังซ่อม';
+                                            $priorityText = $qt['priority'] === 'critical' ? '🔴' : ($qt['priority'] === 'urgent' ? '🟠' : '');
+                                        ?>
+                                        <tr class="hover:bg-white/5 transition-colors">
+                                            <td class="px-6 py-4 font-mono text-sm text-text-muted"><?= htmlspecialchars($qt['ticket_no']) ?></td>
+                                            <td class="px-6 py-4 text-sm text-white"><?= htmlspecialchars($qt['reporter_name'] ?? 'ไม่ระบุ') ?></td>
+                                            <td class="px-6 py-4 text-sm text-ocean-400"><?= htmlspecialchars($qt['dept_name'] ?? 'ไม่ระบุ') ?></td>
+                                            <td class="px-6 py-4 text-sm text-white"><?= $priorityText ?> <?= htmlspecialchars(mb_strimwidth($qt['problem_description'], 0, 50, '...')) ?></td>
+                                            <td class="px-6 py-4 text-xs text-text-muted"><?= date('H:i (d/m)', strtotime($qt['created_at'])) ?></td>
+                                            <td class="px-6 py-4">
+                                                <span class="<?= $statusClass ?> px-2 py-1 rounded text-[10px] font-medium">
+                                                    <?php if ($qt['status'] === 'ongoing'): ?><i class="fa-solid fa-spinner fa-spin mr-1"></i><?php endif; ?>
+                                                    <?= $statusText ?>
+                                                </span>
+                                            </td>
+                                            <td class="px-6 py-4 text-right text-xs text-text-muted">
+                                                <?= $qt['assignee_name'] ? htmlspecialchars($qt['assignee_name']) : '-' ?>
+                                            </td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========================================== -->
                 <!-- VIEW 2: CREATE TICKET -->
                 <!-- ========================================== -->
                 <section id="view-create-ticket" class="view-section <?= $user['role'] === 'user' ? 'active' : 'hidden' ?> space-y-6">
+
                     <div class="mb-6">
                         <h2 class="text-2xl font-bold text-white mb-1">แจ้งซ่อมอุปกรณ์ไอที</h2>
                         <p class="text-text-muted text-sm">กรอกข้อมูลรายละเอียดเพื่อให้ช่างดำเนินการแก้ไข</p>
@@ -1479,10 +1603,10 @@ header('Content-Type: text/html; charset=utf-8');
     <!-- Assign Modal -->
     <div id="assignModal" class="hidden fixed inset-0 bg-ocean-900/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="glass-card w-full max-w-md p-6 relative">
-            <button onclick="closeAssignModal()" class="absolute top-4 right-4 text-text-muted hover:text-white transition-colors">
+            <button onclick="closeAssignModal()" class="absolute top-4 right-4 text-text-muted hover:text-ocean-500 transition-colors">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
-            <h3 class="text-xl font-bold text-white mb-4">จ่ายงาน (Assign Ticket)</h3>
+            <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-4">จ่ายงาน (Assign Ticket)</h3>
             <p class="text-sm text-text-muted mb-4">เลือกเจ้าหน้าที่รับผิดชอบ หรือสุ่มอัตโนมัติตามภาระงาน (งานในมือ)</p>
             
             <input type="hidden" id="assignTicketId" value="">
