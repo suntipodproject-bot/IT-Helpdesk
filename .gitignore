@@ -1,0 +1,13 @@
+# Environments
+.env
+.env.*
+
+# Database / Config
+src/includes/config.php
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
