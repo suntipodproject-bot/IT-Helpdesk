@@ -61,42 +61,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>สมัครผู้ใช้งาน | IT Service Helpdesk</title>
+
+    <!-- Theme Initialization -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        :root {
+            /* Light Mode Default - Hospital Teal/Blue Theme */
+            --bg-main-1: #f8fafc; /* Slate 50 */
+            --bg-main-2: #f1f5f9; /* Slate 100 */
+            --bg-main-3: #e2e8f0; /* Slate 200 */
+            --card-bg: #ffffff;
+            --card-border: #cbd5e1;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --input-text: #0f172a;
+            --primary-accent: #0d9488;
+            --primary-accent-hover: #0f766e;
+            --accent-glow: rgba(13, 148, 136, 0.15);
+            --orb-opacity: 0.05;
+        }
+
+        html.dark {
+            /* Dark Mode Theme */
+            --bg-main-1: #071324;
+            --bg-main-2: #0f213a;
+            --bg-main-3: #071324;
+            --card-bg: rgba(24, 48, 80, 0.7);
+            --card-border: rgba(0, 180, 216, 0.2);
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --input-bg: rgba(15, 33, 58, 0.8);
+            --input-border: rgba(255, 255, 255, 0.1);
+            --input-text: #ffffff;
+            --primary-accent: #00b4d8;
+            --primary-accent-hover: #0077b6;
+            --accent-glow: rgba(0, 180, 216, 0.3);
+            --orb-opacity: 0.15;
+        }
+
         body { font-family: 'Sarabun', sans-serif; }
         .bg-animated {
-            background: linear-gradient(135deg, #071324 0%, #0f213a 40%, #071324 100%);
+            background: linear-gradient(135deg, var(--bg-main-1) 0%, var(--bg-main-2) 40%, var(--bg-main-3) 100%);
             min-height: 100vh;
         }
         .glass-card {
-            background: rgba(24, 48, 80, 0.7);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+        }
+        
+        html.dark .glass-card {
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(0, 180, 216, 0.2);
         }
+        
         .dark-input {
-            background: rgba(15, 33, 58, 0.8);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: white;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--input-text);
             transition: all 0.3s;
         }
         .dark-input:focus {
             outline: none;
-            border-color: #00b4d8;
-            box-shadow: 0 0 0 3px rgba(0,180,216,0.2);
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
         }
-        .dark-input::placeholder { color: #64748b; }
+        .dark-input::placeholder { color: var(--text-muted); }
         .btn-primary {
-            background: linear-gradient(135deg, #00b4d8, #0077b6);
+            background: linear-gradient(135deg, var(--primary-accent), var(--primary-accent-hover));
             transition: all 0.3s;
-            box-shadow: 0 0 20px rgba(0,180,216,0.3);
+            box-shadow: 0 0 20px var(--accent-glow);
         }
         .btn-primary:hover {
             transform: translateY(-1px);
-            box-shadow: 0 0 30px rgba(0,180,216,0.5);
+            box-shadow: 0 0 30px var(--accent-glow);
         }
         .btn-success {
             background: linear-gradient(135deg, #10b981, #059669);
@@ -111,12 +165,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             position: absolute;
             border-radius: 50%;
             filter: blur(80px);
-            opacity: 0.15;
+            opacity: var(--orb-opacity);
             animation: float 8s ease-in-out infinite;
         }
         @keyframes float {
             0%, 100% { transform: translateY(0) scale(1); }
             50% { transform: translateY(-20px) scale(1.05); }
+        }
+
+        /* Light Mode Text Overrides */
+        html:not(.dark) h1 {
+            color: var(--text-main) !important;
+        }
+        html:not(.dark) label {
+            color: var(--text-main) !important;
+        }
+        html:not(.dark) .text-slate-400 {
+            color: var(--text-muted) !important;
+        }
+        html:not(.dark) .text-cyan-400 {
+            color: var(--primary-accent) !important;
+        }
+        html:not(.dark) .text-cyan-400:hover {
+            color: var(--primary-accent-hover) !important;
+        }
+        html:not(.dark) .text-cyan-400 i {
+            color: var(--primary-accent) !important;
+        }
+        html:not(.dark) .border-white\/10 {
+            border-color: var(--card-border) !important;
         }
     </style>
 </head>

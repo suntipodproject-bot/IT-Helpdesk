@@ -26,10 +26,10 @@ $ticket_query = "SELECT t.*, d.dept_name, a.asset_code, u.full_name as assignee_
                  LEFT JOIN users u ON t.assigned_to = u.id";
 
 if ($user['role'] === 'user') {
-    $t_stmt = $db->prepare($ticket_query . " WHERE t.reporter_id = ? ORDER BY t.created_at DESC");
+    $t_stmt = $db->prepare($ticket_query . " WHERE t.reporter_id = ? ORDER BY FIELD(t.status, 'pending', 'ongoing', 'completed', 'cancelled') ASC, t.created_at DESC");
     $t_stmt->execute([$user['id']]);
 } else {
-    $t_stmt = $db->query($ticket_query . " ORDER BY t.created_at DESC");
+    $t_stmt = $db->query($ticket_query . " ORDER BY FIELD(t.status, 'pending', 'ongoing', 'completed', 'cancelled') ASC, t.created_at DESC");
 }
 $all_tickets = $t_stmt->fetchAll();
 
@@ -41,7 +41,19 @@ header('Content-Type: text/html; charset=utf-8');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IT Service Helpdesk | Ocean Blue</title>
+    <title>IT Service Helpdesk | SNCH</title>
+
+    <!-- Theme Initialization -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
 
     <!-- Google Fonts: Sarabun -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -73,12 +85,12 @@ header('Content-Type: text/html; charset=utf-8');
                     },
                     colors: {
                         ocean: {
-                            900: '#071324', // Deepest background
-                            800: '#0f213a', // Sidebar/Nav
-                            700: '#183050', // Cards
-                            600: '#22426c', // Hover states
-                            500: '#00b4d8', // Primary Accent (Cyan)
-                            400: '#48cae4', // Secondary Accent (Light Blue)
+                            900: 'var(--ocean-900)', // Page Background
+                            800: 'var(--ocean-800)', // Sidebar/Nav
+                            700: 'var(--ocean-700)', // Active Sidebar Item
+                            600: 'var(--ocean-600)', // Sidebar hover item
+                            500: 'var(--ocean-500)', // Primary Accent
+                            400: 'var(--ocean-400)', // Secondary Accent
                         },
                         status: {
                             critical: '#ff4d4d',
@@ -94,12 +106,61 @@ header('Content-Type: text/html; charset=utf-8');
 
     <style>
         :root {
+            /* Light Mode Default - Hospital Teal/Blue Theme */
+            --bg-main: #f8fafc; /* Slate 50 */
+            --text-main: #0f172a; /* Slate 900 */
+            --text-muted: #475569; /* Slate 600 */
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0; /* Slate 200 */
+            --primary-glow: 0 10px 15px -3px rgba(13, 148, 136, 0.1), 0 4px 6px -4px rgba(13, 148, 136, 0.1);
+
+            --ocean-900: #f8fafc; /* Page Background */
+            --ocean-800: #0f766e; /* Sidebar background (Medical Teal 700) */
+            --ocean-700: #115e59; /* Sidebar active item (Teal 800) */
+            --ocean-600: #134e4a; /* Sidebar hover item (Teal 900) */
+            --ocean-500: #0d9488; /* Primary Teal Accent (Teal 600) */
+            --ocean-400: #14b8a6; /* Secondary Teal Accent (Teal 500) */
+
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --input-text: #0f172a;
+            --input-focus-border: #0d9488;
+            --input-focus-ring: rgba(13, 148, 136, 0.2);
+
+            --toast-bg: #ffffff;
+            --toast-border: #0d9488;
+            --toast-text: #0f172a;
+            
+            --primary-teal: #0d9488;
+        }
+
+        html.dark {
+            /* Dark Mode Theme */
             --bg-main: #071324;
             --text-main: #f8f9fa;
             --text-muted: #94a3b8;
             --card-bg: rgba(24, 48, 80, 0.7);
             --card-border: rgba(0, 180, 216, 0.2);
             --primary-glow: 0 0 15px rgba(0, 180, 216, 0.5);
+
+            --ocean-900: #071324;
+            --ocean-800: #0f213a;
+            --ocean-700: #183050;
+            --ocean-600: #22426c;
+            --ocean-500: #00b4d8;
+            --ocean-400: #48cae4;
+
+            --input-bg: rgba(15, 33, 58, 0.8);
+            --input-border: rgba(255, 255, 255, 0.1);
+            --input-text: #ffffff;
+            --input-focus-border: #00b4d8;
+            --input-focus-ring: rgba(0, 180, 216, 0.25);
+
+            --toast-bg: #183050;
+            --toast-border: #00b4d8;
+            --toast-text: #ffffff;
+            
+            --primary-teal: #00b4d8;
         }
 
         body {
@@ -112,8 +173,6 @@ header('Content-Type: text/html; charset=utf-8');
         /* Glassmorphism Cards */
         .glass-card {
             background: var(--card-bg);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             border: 1px solid var(--card-border);
             border-radius: 0.75rem;
             transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
@@ -122,6 +181,13 @@ header('Content-Type: text/html; charset=utf-8');
         .glass-card:hover {
             transform: translateY(-2px);
             box-shadow: var(--primary-glow);
+        }
+        
+        html:not(.dark) .glass-card:hover {
+            border-color: rgba(13, 148, 136, 0.4);
+        }
+        
+        html.dark .glass-card:hover {
             border-color: rgba(0, 180, 216, 0.5);
         }
 
@@ -132,30 +198,30 @@ header('Content-Type: text/html; charset=utf-8');
         }
 
         ::-webkit-scrollbar-track {
-            background: #0f213a;
+            background: var(--bg-main);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: #22426c;
+            background: var(--input-border);
             border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #00b4d8;
+            background: var(--primary-teal);
         }
 
         /* Form Inputs */
         .dark-input {
-            background-color: rgba(15, 33, 58, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--input-text);
             transition: all 0.3s ease;
         }
 
         .dark-input:focus {
             outline: none;
-            border-color: #00b4d8;
-            box-shadow: 0 0 0 2px rgba(0, 180, 216, 0.25);
+            border-color: var(--input-focus-border);
+            box-shadow: 0 0 0 2px var(--input-focus-ring);
         }
 
         /* Status Badges */
@@ -191,6 +257,11 @@ header('Content-Type: text/html; charset=utf-8');
         }
 
         .badge-status-progress {
+            background: rgba(13, 148, 136, 0.1);
+            color: #0d9488;
+        }
+        
+        html.dark .badge-status-progress {
             background: rgba(0, 180, 216, 0.1);
             color: #00b4d8;
         }
@@ -202,24 +273,18 @@ header('Content-Type: text/html; charset=utf-8');
 
         /* Loader */
         .loader {
-            border: 3px solid rgba(255, 255, 255, 0.1);
+            border: 3px solid var(--input-border);
             border-radius: 50%;
-            border-top: 3px solid #00b4d8;
+            border-top: 3px solid var(--primary-teal);
             width: 24px;
             height: 24px;
             -webkit-animation: spin 1s linear infinite;
-            /* Safari */
             animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         /* Toast */
@@ -227,16 +292,20 @@ header('Content-Type: text/html; charset=utf-8');
             position: fixed;
             bottom: 20px;
             right: 20px;
-            background: #183050;
-            border-left: 4px solid #00b4d8;
-            color: white;
+            background: var(--toast-bg);
+            border-left: 4px solid var(--toast-border);
+            color: var(--toast-text);
             padding: 1rem 1.5rem;
             border-radius: 0.5rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
             transform: translateY(100px);
             opacity: 0;
             transition: all 0.3s ease;
             z-index: 50;
+        }
+        
+        html.dark .toast {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
         }
 
         .toast.show {
@@ -256,37 +325,87 @@ header('Content-Type: text/html; charset=utf-8');
             overflow-y: auto;
             padding-bottom: 2rem;
         }
-        /* Tom Select Dark Theme Overrides */
+        
+        /* Tom Select Theme Overrides */
         .ts-control {
-            background: rgba(13, 31, 56, 0.7) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            background: var(--input-bg) !important;
+            border: 1px solid var(--input-border) !important;
             border-radius: 0.5rem !important;
-            color: white !important;
-            padding: 0.625rem 0.75rem 0.625rem 2.5rem !important; /* pl-10 to match icons */
+            color: var(--input-text) !important;
+            padding: 0.625rem 0.75rem 0.625rem 2.5rem !important;
         }
         .ts-dropdown {
-            background: #0f2746 !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            color: white !important;
+            background: var(--card-bg) !important;
+            border: 1px solid var(--card-border) !important;
+            color: var(--text-main) !important;
         }
         .ts-dropdown .active {
-            background: #00b4d8 !important;
+            background: var(--primary-teal) !important;
             color: white !important;
         }
         .ts-dropdown .option {
             padding: 8px 12px !important;
         }
         .ts-control input {
-            color: white !important;
+            color: var(--input-text) !important;
         }
         .ts-wrapper.single .ts-control:after {
-            border-color: #94a3b8 transparent transparent transparent !important;
+            border-color: var(--text-muted) transparent transparent transparent !important;
         }
         .ts-wrapper.single.input-active .ts-control:after {
-            border-color: transparent transparent #94a3b8 transparent !important;
+            border-color: transparent transparent var(--text-muted) transparent !important;
         }
         .ts-wrapper .ts-control {
             font-size: 0.875rem !important;
+        }
+
+        /* Global text color overrides for Light Mode */
+        html:not(.dark) .main-content h1,
+        html:not(.dark) .main-content h2,
+        html:not(.dark) .main-content h3,
+        html:not(.dark) .main-content h4,
+        html:not(.dark) .main-content .text-white:not(button):not(.badge):not(.nav-btn):not(a):not(.bg-gradient-to-tr) {
+            color: var(--text-main) !important;
+        }
+
+        html:not(.dark) select,
+        html:not(.dark) input,
+        html:not(.dark) textarea {
+            color: var(--text-main) !important;
+        }
+
+        html:not(.dark) .border-white\/10 {
+            border-color: var(--card-border) !important;
+        }
+        
+        html:not(.dark) .divide-white\/5 > * {
+            border-color: var(--card-border) !important;
+        }
+
+        html:not(.dark) select.bg-ocean-800 {
+            background-color: var(--input-bg) !important;
+            border-color: var(--input-border) !important;
+            color: var(--input-text) !important;
+        }
+        
+        .text-text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        /* Sidebar custom overrides for Light Mode */
+        aside {
+            --text-muted: #9cc2be !important;
+            background-color: var(--ocean-800) !important;
+        }
+        
+        /* Mobile header fix */
+        header.md\:hidden {
+            background-color: var(--ocean-800) !important;
+            color: white !important;
+        }
+        
+        header.md\:hidden span {
+            color: white !important;
         }
     </style>
 </head>
@@ -364,6 +483,14 @@ header('Content-Type: text/html; charset=utf-8');
                         <span class="ml-3 hidden md:inline">จัดการแผนก</span>
                     </button>
                     <?php endif; ?>
+
+                    <!-- Theme Toggle -->
+                    <button onclick="toggleDarkMode()"
+                        class="nav-btn w-full flex items-center p-3 rounded-lg text-text-muted hover:text-white hover:bg-ocean-700 transition-colors"
+                        id="theme-toggle-btn">
+                        <i class="fa-solid fa-moon w-6" id="theme-toggle-icon"></i>
+                        <span class="ml-3 hidden md:inline" id="theme-toggle-text">โหมดมืด</span>
+                    </button>
                 </nav>
             </div>
 
@@ -1287,6 +1414,32 @@ header('Content-Type: text/html; charset=utf-8');
                 console.error(err);
             }
         }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            updateThemeUI();
+            
+            // Re-render charts to adjust text colors
+            if (typeof loadDashboard === 'function') {
+                loadDashboard();
+            }
+        }
+
+        function updateThemeUI() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const icon = document.getElementById('theme-toggle-icon');
+            const text = document.getElementById('theme-toggle-text');
+            if (icon) {
+                icon.className = isDark ? 'fa-solid fa-sun w-6 text-yellow-400' : 'fa-solid fa-moon w-6';
+            }
+            if (text) {
+                text.innerText = isDark ? 'โหมดสว่าง' : 'โหมดมืด';
+            }
+        }
+
+        // Initialize theme UI
+        updateThemeUI();
 
         // Initialize first view
         document.addEventListener('DOMContentLoaded', () => {

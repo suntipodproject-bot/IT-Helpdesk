@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     department_id   INT,
     asset_id        INT,
     problem_description TEXT NOT NULL,
+    image_url       VARCHAR(255) DEFAULT NULL,
     status          ENUM('pending','ongoing','completed','cancelled') DEFAULT 'pending',
     assigned_to     INT COMMENT 'FK → users.id',
     note            TEXT COMMENT 'ช่างบันทึกหมายเหตุ',

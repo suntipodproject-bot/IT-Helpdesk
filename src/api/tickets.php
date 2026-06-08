@@ -55,7 +55,7 @@ if ($method === 'GET') {
              LEFT JOIN department d ON t.department_id = d.id
              WHERE " . implode(' AND ', $where) . "
              ORDER BY
-               FIELD(t.priority,'critical','urgent','normal'),
+               FIELD(t.status, 'pending', 'ongoing', 'completed', 'cancelled') ASC,
                t.created_at DESC
              LIMIT 100";
 

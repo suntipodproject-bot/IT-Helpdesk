@@ -37,9 +37,10 @@ async function loadDashboard() {
 }
 
 function renderCharts(deptData, priorityData) {
-    Chart.defaults.color = '#94a3b8';
+    const isDark = document.documentElement.classList.contains('dark');
+    Chart.defaults.color = isDark ? '#94a3b8' : '#475569';
     Chart.defaults.font.family = "'Sarabun', sans-serif";
-    Chart.defaults.scale.grid.color = 'rgba(255,255,255,0.05)';
+    Chart.defaults.scale.grid.color = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
 
     if (deptChart) deptChart.destroy();
     if (issueChart) issueChart.destroy();

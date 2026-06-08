@@ -3,11 +3,11 @@
 date_default_timezone_set('Asia/Bangkok');
 
 // Database
-define('DB_HOST',     'it-helpdesk-db');
+define('DB_HOST',     '192.168.40.39');
 define('DB_PORT',     '3306');
 define('DB_NAME',     'helpdesk_db');
-define('DB_USER',     'helpdesk');
-define('DB_PASS',     'helpdesk1234');
+define('DB_USER',     'adminwebapp');
+define('DB_PASS',     '#Snc%10855@!webapp');
 
 // ======================================================
 // 🔔 Notification Channels (ตั้งค่าช่องทางแจ้งเตือน)
