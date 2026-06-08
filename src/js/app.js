@@ -10,7 +10,7 @@ async function loadDashboard() {
     try {
         const m = document.getElementById('dash-month').value;
         const y = document.getElementById('dash-year').value;
-        const res  = await fetch(`/api/dashboard.php?month=${m}&year=${y}`);
+        const res = await fetch(`/api/dashboard.php?month=${m}&year=${y}`);
         const json = await res.json();
         if (!json.success) return;
         const d = json.data;
@@ -25,15 +25,15 @@ async function loadDashboard() {
         setText('stat-pending', d.pending);
         setText('stat-pending-detail', `วิกฤต: ${d.critical_pending} | เร่งด่วน: ${d.urgent_pending}`);
         setText('stat-done-month', d.done_month);
-        
+
         const successRate = d.total_month > 0 ? Math.round((d.done_month / d.total_month) * 100) : 0;
         setText('stat-done-pct', `อัตราความสำเร็จ ${successRate}%`);
-        
+
         setText('stat-sla-pct', d.sla_pct + '%');
 
         // Rebuild charts with real data
         renderCharts(d.chart_dept, d.chart_priority);
-    } catch(e) { console.error('Dashboard load error:', e); }
+    } catch (e) { console.error('Dashboard load error:', e); }
 }
 
 function renderCharts(deptData, priorityData) {
@@ -54,8 +54,8 @@ function renderCharts(deptData, priorityData) {
         type: 'bar',
         data: {
             labels: deptData.map(r => r.label),
-            datasets: [{ 
-                label: 'จำนวนแจ้งซ่อม', 
+            datasets: [{
+                label: 'จำนวนแจ้งซ่อม',
                 data: deptData.map(r => r.value),
                 backgroundColor: gradBlue,
                 borderRadius: 8,
@@ -63,10 +63,10 @@ function renderCharts(deptData, priorityData) {
                 hoverBackgroundColor: '#00d2ff'
             }]
         },
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { 
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
                 legend: { display: false },
                 tooltip: {
                     backgroundColor: 'rgba(15, 23, 42, 0.9)',
@@ -92,7 +92,7 @@ function renderCharts(deptData, priorityData) {
                 const map = { critical: 'วิกฤต', urgent: 'เร่งด่วน', normal: 'ปกติ' };
                 return map[r.label] || r.label;
             }),
-            datasets: [{ 
+            datasets: [{
                 data: priorityData.map(r => r.value),
                 backgroundColor: [
                     '#ff4d4d', // Critical
@@ -104,19 +104,19 @@ function renderCharts(deptData, priorityData) {
                 weight: 0.5
             }]
         },
-        options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
             cutout: '75%',
-            plugins: { 
-                legend: { 
-                    position: 'bottom', 
-                    labels: { 
-                        boxWidth: 12, 
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        boxWidth: 12,
                         padding: 20,
                         usePointStyle: true,
                         pointStyle: 'circle'
-                    } 
+                    }
                 },
                 tooltip: {
                     backgroundColor: 'rgba(15, 23, 42, 0.9)',
@@ -132,13 +132,13 @@ function renderCharts(deptData, priorityData) {
 // ---- Ticket List ----
 const PRIORITY_BADGE = {
     critical: '<span class="badge badge-critical">วิกฤต</span>',
-    urgent:   '<span class="badge badge-urgent">เร่งด่วน</span>',
-    normal:   '<span class="badge badge-normal">ปกติ</span>',
+    urgent: '<span class="badge badge-urgent">เร่งด่วน</span>',
+    normal: '<span class="badge badge-normal">ปกติ</span>',
 };
 const PRIORITY_BAR = { critical: 'bg-status-critical', urgent: 'bg-status-urgent', normal: 'bg-status-normal' };
 const STATUS_LABEL = {
-    pending:   '<span class="badge-status-pending px-2 py-1 rounded text-xs font-medium">รอดำเนินการ</span>',
-    ongoing:   '<span class="badge-status-progress px-2 py-1 rounded text-xs font-medium"><i class="fa-solid fa-spinner fa-spin mr-1"></i>กำลังซ่อม</span>',
+    pending: '<span class="badge-status-pending px-2 py-1 rounded text-xs font-medium">รอดำเนินการ</span>',
+    ongoing: '<span class="badge-status-progress px-2 py-1 rounded text-xs font-medium"><i class="fa-solid fa-spinner fa-spin mr-1"></i>กำลังซ่อม</span>',
     completed: '<span class="badge-status-done px-2 py-1 rounded text-xs font-medium"><i class="fa-solid fa-check mr-1"></i>ซ่อมเสร็จสิ้น</span>',
     cancelled: '<span class="px-2 py-1 rounded text-xs font-medium text-gray-400 bg-gray-800">ยกเลิก</span>',
 };
@@ -150,20 +150,20 @@ async function loadTickets(filters = {}) {
     }
 
     const containerId = isMyJobs ? 'my-jobs-container' : 'ticket-container';
-    const container   = document.getElementById(containerId);
+    const container = document.getElementById(containerId);
     if (!container) return;
-    
+
     container.innerHTML = '<div class="col-span-3 text-center text-slate-400 py-10"><i class="fa-solid fa-spinner fa-spin text-2xl mb-2"></i><p>กำลังโหลด...</p></div>';
 
     const params = new URLSearchParams(filters).toString();
     try {
-        const res  = await fetch('/api/tickets.php?' + params);
+        const res = await fetch('/api/tickets.php?' + params);
         const json = await res.json();
         if (!json.success) { container.innerHTML = '<p class="text-red-400 col-span-3 text-center">โหลดข้อมูลไม่สำเร็จ</p>'; return; }
 
         const tickets = json.data;
         if (!tickets.length) {
-            container.innerHTML = `<p class="text-slate-500 col-span-3 text-center py-10">${isMyJobs ? 'คุณยังไม่มีงานที่ได้รับมอบหมาย' : 'ไม่มีรายการแจ้งซ่อม'}</p>`; 
+            container.innerHTML = `<p class="text-slate-500 col-span-3 text-center py-10">${isMyJobs ? 'คุณยังไม่มีงานที่ได้รับมอบหมาย' : 'ไม่มีรายการแจ้งซ่อม'}</p>`;
             return;
         }
 
@@ -173,7 +173,7 @@ async function loadTickets(filters = {}) {
             <div class="flex justify-between items-start mb-3">
                 <div>
                     <span class="text-xs text-text-muted font-mono">${t.ticket_no}</span>
-                    <h3 class="text-white font-semibold mt-1 text-sm">${escHtml(t.description).substring(0,60)}${t.description.length>60?'...':''}</h3>
+                    <h3 class="text-white font-semibold mt-1 text-sm">${escHtml(t.description).substring(0, 60)}${t.description.length > 60 ? '...' : ''}</h3>
                 </div>
                 ${PRIORITY_BADGE[t.priority] || ''}
             </div>
@@ -181,8 +181,8 @@ async function loadTickets(filters = {}) {
             <div class="space-y-1 text-xs text-text-muted mb-3">
                 <p><i class="fa-solid fa-user w-4 text-center"></i> ${escHtml(t.reporter_name)}</p>
                 <p><i class="fa-solid fa-phone w-4 text-center"></i> ${escHtml(t.reporter_phone || '-')}</p>
-                ${t.location_room?`<p><i class="fa-solid fa-location-dot w-4 text-center"></i> ${escHtml(t.location_room)}</p>`:''}
-                ${t.asset_name?`<p><i class="fa-solid fa-desktop w-4 text-center"></i> ${escHtml(t.asset_name)} ${t.asset_model?'('+escHtml(t.asset_model)+')':''} <span class="text-ocean-400 font-mono ml-1">${escHtml(t.asset_code)}</span></p>`:''}
+                ${t.location_room ? `<p><i class="fa-solid fa-location-dot w-4 text-center"></i> ${escHtml(t.location_room)}</p>` : ''}
+                ${t.asset_name ? `<p><i class="fa-solid fa-desktop w-4 text-center"></i> ${escHtml(t.asset_name)} ${t.asset_model ? '(' + escHtml(t.asset_model) + ')' : ''} <span class="text-ocean-400 font-mono ml-1">${escHtml(t.asset_code)}</span></p>` : ''}
                 <p><i class="fa-solid fa-clock w-4 text-center"></i> ${timeAgo(t.created_at)}</p>
                 
                 ${t.image_url ? `
@@ -216,19 +216,19 @@ async function loadTickets(filters = {}) {
                 <select onchange="assignTicket(${t.id}, this.value)"
                     class="bg-ocean-800 text-xs text-white border border-white/10 rounded px-2 py-1 focus:outline-none focus:border-ocean-500">
                     <option value="">จ่ายงาน...</option>
-                    ${window.STAFF_LIST ? window.STAFF_LIST.map(s=>`<option value="${s.id}" ${t.assigned_to==s.id?'selected':''}>${s.full_name}</option>`).join('') : ''}
-                </select>` : `<span class="text-xs text-text-muted">${t.assigned_name ? '👤 '+escHtml(t.assigned_name) : 'ยังไม่ได้รับมอบหมาย'}</span>`}
+                    ${window.STAFF_LIST ? window.STAFF_LIST.map(s => `<option value="${s.id}" ${t.assigned_to == s.id ? 'selected' : ''}>${s.full_name}</option>`).join('') : ''}
+                </select>` : `<span class="text-xs text-text-muted">${t.assigned_name ? '👤 ' + escHtml(t.assigned_name) : 'ยังไม่ได้รับมอบหมาย'}</span>`}
             </div>
             ${(t.status !== 'completed' && (window.IS_ADMIN || t.assigned_to == window.CURRENT_USER.id)) ? `
             <div class="mt-2 flex gap-2">
-                ${t.status === 'pending'  ? `<button onclick="updateStatus(${t.id},'ongoing')"   class="flex-1 text-xs bg-ocean-700 hover:bg-ocean-600 text-white py-1 rounded transition-colors">รับงาน</button>` : ''}
-                ${t.status === 'ongoing'  ? `<button onclick="updateStatus(${t.id},'completed')" class="flex-1 text-xs bg-green-700 hover:bg-green-600 text-white py-1 rounded transition-colors">✅ ปิดงาน</button>` : ''}
+                ${t.status === 'pending' ? `<button onclick="updateStatus(${t.id},'ongoing')"   class="flex-1 text-xs bg-ocean-700 hover:bg-ocean-600 text-white py-1 rounded transition-colors">รับงาน</button>` : ''}
+                ${t.status === 'ongoing' ? `<button onclick="updateStatus(${t.id},'completed')" class="flex-1 text-xs bg-green-700 hover:bg-green-600 text-white py-1 rounded transition-colors">✅ ปิดงาน</button>` : ''}
             </div>` : ''}
         </div>`).join('');
-    } catch(e) { container.innerHTML = '<p class="text-red-400 col-span-3 text-center">เกิดข้อผิดพลาด</p>'; }
+    } catch (e) { container.innerHTML = '<p class="text-red-400 col-span-3 text-center">เกิดข้อผิดพลาด</p>'; }
 }
 
-window.refreshCurrentTicketsView = function() {
+window.refreshCurrentTicketsView = function () {
     const myJobsView = document.getElementById('view-my-jobs');
     if (myJobsView && !myJobsView.classList.contains('hidden')) {
         loadTickets({ assigned_to: 'me' });
@@ -243,12 +243,14 @@ window.refreshCurrentTicketsView = function() {
 };
 
 async function updateStatus(id, status) {
-    await fetch('/api/tickets.php', { method:'PUT', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ id, status }) });
+    await fetch('/api/tickets.php', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status })
+    });
     window.refreshCurrentTicketsView();
 }
 
-window.linkAsset = async function(id) {
+window.linkAsset = async function (id) {
     const code = document.getElementById('link-asset-' + id).value.trim();
     if (!code) return showToast('❌ กรุณาระบุรหัสเครื่อง', true);
 
@@ -271,8 +273,10 @@ window.linkAsset = async function(id) {
 };
 
 async function assignTicket(id, assigned_to) {
-    await fetch('/api/tickets.php', { method:'PUT', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ id, assigned_to: assigned_to || null }) });
+    await fetch('/api/tickets.php', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, assigned_to: assigned_to || null })
+    });
     window.refreshCurrentTicketsView();
 }
 
@@ -290,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ---- Create Ticket Form ----
 let isSubmitting = false;
-window.previewFile = function(input) {
+window.previewFile = function (input) {
     const container = document.getElementById('filePreview');
     container.innerHTML = '';
     if (input.files && input.files[0]) {
@@ -300,10 +304,10 @@ window.previewFile = function(input) {
             input.value = '';
             return;
         }
-        
+
         container.classList.remove('hidden');
         const reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
             container.innerHTML = `
                 <div class="relative group">
                     <img src="${e.target.result}" class="w-full h-24 object-cover rounded-lg border border-white/10">
@@ -319,24 +323,24 @@ window.previewFile = function(input) {
     }
 };
 
-window.clearFile = function() {
+window.clearFile = function () {
     const input = document.getElementById('ticketFile');
     input.value = '';
     previewFile(input);
 };
 
-window.handleFormSubmit = async function(e) {
+window.handleFormSubmit = async function (e) {
     e.preventDefault();
     if (isSubmitting) return;
-    
+
     const form = e.target;
-    const btn  = form.querySelector('[type=submit]');
+    const btn = form.querySelector('[type=submit]');
     const loader = document.getElementById('page-loader');
-    
+
     isSubmitting = true;
     btn.disabled = true;
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังส่ง...';
-    
+
     if (loader) {
         loader.querySelector('p').textContent = 'กำลังบันทึกข้อมูลและแจ้งเตือนทีมงาน...';
         loader.classList.remove('hidden');
@@ -345,18 +349,18 @@ window.handleFormSubmit = async function(e) {
     const formData = new FormData(form);
 
     try {
-        const res  = await fetch('/api/tickets.php', { 
-            method: 'POST', 
-            body: formData 
+        const res = await fetch('/api/tickets.php', {
+            method: 'POST',
+            body: formData
         });
         const json = await res.json();
-        
+
         if (json.success) {
             showToast(`✅ สร้าง Ticket ${json.ticket_no} สำเร็จ!`);
             form.reset();
             const assetInfo = document.getElementById('assetInfo');
             if (assetInfo) assetInfo.classList.add('hidden');
-            
+
             // Redirect after success
             setTimeout(() => {
                 if (loader) loader.classList.add('hidden');
@@ -370,7 +374,7 @@ window.handleFormSubmit = async function(e) {
             btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i> ส่งเรื่องแจ้งซ่อม';
             isSubmitting = false;
         }
-    } catch(err) {
+    } catch (err) {
         showToast('❌ ไม่สามารถเชื่อมต่อ Server ได้', true);
         if (loader) loader.classList.add('hidden');
         btn.disabled = false;
@@ -380,11 +384,11 @@ window.handleFormSubmit = async function(e) {
 }
 
 // ---- QR / Asset Lookup ----
-window.searchAssetForTicket = async function(codeToSearch = null) {
+window.searchAssetForTicket = async function (codeToSearch = null) {
     const input = document.getElementById('assetIdInput');
-    const info  = document.getElementById('assetInfo');
-    const code  = codeToSearch || input.value.trim();
-    
+    const info = document.getElementById('assetInfo');
+    const code = codeToSearch || input.value.trim();
+
     if (!code) return;
 
     if (!codeToSearch) {
@@ -393,22 +397,22 @@ window.searchAssetForTicket = async function(codeToSearch = null) {
     }
 
     try {
-        const res  = await fetch('/api/assets.php?code=' + encodeURIComponent(code));
+        const res = await fetch('/api/assets.php?code=' + encodeURIComponent(code));
         const json = await res.json();
-        
+
         if (input) input.classList.remove('animate-pulse');
-        
+
         if (json.success && json.data) {
             const a = json.data;
             if (input) input.value = a.asset_code;
             const hiddenId = document.getElementById('hiddenAssetId');
             if (hiddenId) hiddenId.value = a.id;
-            
+
             if (info) {
                 info.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i> พบ: ${escHtml(a.asset_name)} ${escHtml(a.brand || '')} ${escHtml(a.model || '')}`;
                 info.classList.remove('hidden');
             }
-            
+
             // Auto-fill department if available
             if (a.department_id) {
                 const deptSel = document.getElementById('deptSelect');
@@ -425,20 +429,20 @@ window.searchAssetForTicket = async function(codeToSearch = null) {
                 info.classList.remove('hidden');
             }
         }
-    } catch(e) { 
+    } catch (e) {
         if (input) {
-            input.classList.remove('animate-pulse'); 
+            input.classList.remove('animate-pulse');
             input.value = code;
         }
     }
 };
 
-window.simulateQRScan = function() {
+window.simulateQRScan = function () {
     searchAssetForTicket();
 };
 
 // ---- Navigation (switchView) — Full Definition ----
-window.switchView = function(viewId) {
+window.switchView = function (viewId) {
     const loader = document.getElementById('page-loader');
     if (loader) loader.classList.remove('hidden');
 
@@ -463,19 +467,19 @@ window.switchView = function(viewId) {
         if (loader) loader.classList.add('hidden');
 
         // Load real data per view
-        if (viewId === 'dashboard')   loadDashboard();
+        if (viewId === 'dashboard') loadDashboard();
         if (viewId === 'ticket-list') loadTickets();
-        if (viewId === 'my-jobs')     loadTickets({ assigned_to: 'me' });
+        if (viewId === 'my-jobs') loadTickets({ assigned_to: 'me' });
         if (viewId === 'departments') loadDepartments();
-        if (viewId === 'assets')      loadAssets();
+        if (viewId === 'assets') loadAssets();
     }, 300);
 };
 
 // ---- Department Management ----
-window.loadDepartments = async function() {
+window.loadDepartments = async function () {
     const body = document.getElementById('dept-table-body');
     if (!body) return;
-    
+
     body.innerHTML = '<tr><td colspan="3" class="px-6 py-10 text-center"><i class="fa-solid fa-spinner fa-spin text-ocean-400"></i></td></tr>';
 
     try {
@@ -499,19 +503,19 @@ window.loadDepartments = async function() {
                 </tr>
             `).join('');
         }
-    } catch(err) {
+    } catch (err) {
         body.innerHTML = '<tr><td colspan="3" class="px-6 py-10 text-center text-red-400">โหลดข้อมูลล้มเหลว</td></tr>';
     }
 }
 
-window.openAddDeptModal = function() {
+window.openAddDeptModal = function () {
     document.getElementById('deptModalTitle').textContent = 'เพิ่มแผนกใหม่';
     document.getElementById('deptForm').reset();
     document.getElementById('dept_id').value = '';
     document.getElementById('deptModal').classList.remove('hidden');
 };
 
-window.openEditDeptModal = function(d) {
+window.openEditDeptModal = function (d) {
     document.getElementById('deptModalTitle').textContent = 'แก้ไขข้อมูลแผนก';
     document.getElementById('deptForm').reset();
     document.getElementById('dept_id').value = d.id;
@@ -519,11 +523,11 @@ window.openEditDeptModal = function(d) {
     document.getElementById('deptModal').classList.remove('hidden');
 };
 
-window.closeDeptModal = function() {
+window.closeDeptModal = function () {
     document.getElementById('deptModal').classList.add('hidden');
 };
 
-window.handleDeptSubmit = async function(e) {
+window.handleDeptSubmit = async function (e) {
     e.preventDefault();
     const form = e.target;
     const data = {
@@ -552,7 +556,7 @@ window.handleDeptSubmit = async function(e) {
     }
 };
 
-window.deleteDept = async function(id) {
+window.deleteDept = async function (id) {
     if (!confirm('⚠️ ยืนยันการลบแผนกนี้?')) return;
     try {
         const res = await fetch('/api/departments.php', {
@@ -573,11 +577,11 @@ window.deleteDept = async function(id) {
 };
 
 // ---- Asset Management ----
-window.loadAssets = async function() {
+window.loadAssets = async function () {
     const body = document.getElementById('asset-table-body');
     const countEl = document.getElementById('asset-count');
     if (!body) return;
-    
+
     body.innerHTML = '<tr><td colspan="3" class="px-6 py-10 text-center"><i class="fa-solid fa-spinner fa-spin text-ocean-400"></i></td></tr>';
 
     try {
@@ -607,19 +611,19 @@ window.loadAssets = async function() {
                 </tr>
             `).join('');
         }
-    } catch(err) {
+    } catch (err) {
         body.innerHTML = '<tr><td colspan="3" class="px-6 py-10 text-center text-red-400">โหลดข้อมูลล้มเหลว</td></tr>';
     }
 }
 
-window.openAddAssetModal = function() {
+window.openAddAssetModal = function () {
     document.getElementById('assetModalTitle').innerHTML = '<i class="fa-solid fa-server text-ocean-400"></i> เพิ่มครุภัณฑ์ใหม่';
     document.getElementById('assetForm').reset();
     document.getElementById('asset_id_hidden').value = '';
     document.getElementById('assetModal').classList.remove('hidden');
 };
 
-window.openEditAssetModal = function(a) {
+window.openEditAssetModal = function (a) {
     document.getElementById('assetModalTitle').innerHTML = '<i class="fa-solid fa-pen-to-square text-ocean-400"></i> แก้ไขข้อมูลครุภัณฑ์';
     document.getElementById('assetForm').reset();
     document.getElementById('asset_id_hidden').value = a.id;
@@ -632,11 +636,11 @@ window.openEditAssetModal = function(a) {
     document.getElementById('assetModal').classList.remove('hidden');
 };
 
-window.closeAssetModal = function() {
+window.closeAssetModal = function () {
     document.getElementById('assetModal').classList.add('hidden');
 };
 
-window.handleAssetSubmit = async function(e) {
+window.handleAssetSubmit = async function (e) {
     e.preventDefault();
     const form = e.target;
     const formData = new FormData(form);
@@ -663,7 +667,7 @@ window.handleAssetSubmit = async function(e) {
     }
 };
 
-window.deleteAsset = async function(id) {
+window.deleteAsset = async function (id) {
     if (!confirm('⚠️ ยืนยันการลบครุภัณฑ์นี้? (ต้องไม่มีประวัติการซ่อม)')) return;
     try {
         const res = await fetch('/api/assets.php', {
@@ -683,12 +687,12 @@ window.deleteAsset = async function(id) {
     }
 };
 
-window.viewAssetDetails = function(code) {
+window.viewAssetDetails = function (code) {
     document.getElementById('assetSearchInput').value = code;
     searchAssetHistory();
 };
 
-window.backToAssetList = function() {
+window.backToAssetList = function () {
     document.getElementById('assetHistoryContainer').classList.add('hidden');
     document.getElementById('assetHistoryContent').classList.add('hidden');
     document.getElementById('assetListContainer').classList.remove('hidden');
@@ -714,8 +718,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ---- Helpers ----
-function setText(id, val) { const el = document.getElementById(id); if(el) el.textContent = val; }
-function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
 function debounce(func, timeout = 300) {
     let timer;
@@ -725,17 +729,17 @@ function debounce(func, timeout = 300) {
     };
 }
 
-window.showToast = function(msg, isError = false) {
+window.showToast = function (msg, isError = false) {
     const toast = document.getElementById('toast');
     const msgEl = document.getElementById('toast-message');
     const titleEl = toast.querySelector('h4');
     if (!toast || !msgEl) return;
-    
+
     if (titleEl) {
         titleEl.textContent = isError ? 'ไม่สำเร็จ!' : 'สำเร็จ!';
         titleEl.className = isError ? 'font-bold text-red-400 text-sm' : 'font-bold text-white text-sm';
     }
-    
+
     const icon = toast.querySelector('i');
     if (icon) {
         icon.className = isError ? 'fa-solid fa-circle-xmark text-red-500 text-xl mr-3' : 'fa-solid fa-circle-check text-status-normal text-xl mr-3';
@@ -749,13 +753,13 @@ window.showToast = function(msg, isError = false) {
 
 function timeAgo(dateStr) {
     const diff = Math.floor((Date.now() - new Date(dateStr)) / 60000);
-    if (diff < 1)   return 'เมื่อกี้';
-    if (diff < 60)  return `${diff} นาทีที่แล้ว`;
-    if (diff < 1440) return `${Math.floor(diff/60)} ชม.ที่แล้ว`;
-    return `${Math.floor(diff/1440)} วันที่แล้ว`;
+    if (diff < 1) return 'เมื่อกี้';
+    if (diff < 60) return `${diff} นาทีที่แล้ว`;
+    if (diff < 1440) return `${Math.floor(diff / 60)} ชม.ที่แล้ว`;
+    return `${Math.floor(diff / 1440)} วันที่แล้ว`;
 }
 // ---- User Management ----
-window.openAddUserModal = function() {
+window.openAddUserModal = function () {
     document.getElementById('userModalTitle').textContent = 'เพิ่มผู้ใช้งานใหม่';
     document.getElementById('userForm').reset();
     document.getElementById('user_id').value = '';
@@ -763,7 +767,7 @@ window.openAddUserModal = function() {
     document.getElementById('userModal').classList.remove('hidden');
 };
 
-window.openEditUserModal = function(u) {
+window.openEditUserModal = function (u) {
     document.getElementById('userModalTitle').textContent = 'แก้ไขข้อมูลผู้ใช้งาน';
     document.getElementById('userForm').reset();
     document.getElementById('user_id').value = u.id;
@@ -776,11 +780,11 @@ window.openEditUserModal = function(u) {
     document.getElementById('userModal').classList.remove('hidden');
 };
 
-window.closeUserModal = function() {
+window.closeUserModal = function () {
     document.getElementById('userModal').classList.add('hidden');
 };
 
-window.handleUserSubmit = async function(e) {
+window.handleUserSubmit = async function (e) {
     e.preventDefault();
     const formData = new FormData(e.target);
     const data = {};
@@ -809,7 +813,7 @@ window.handleUserSubmit = async function(e) {
     }
 };
 // ---- Asset Management Logic ----
-window.searchAssetHistory = async function() {
+window.searchAssetHistory = async function () {
     const code = document.getElementById('assetSearchInput').value.trim();
     if (!code) return showToast('❌ กรุณาระบุรหัสครุภัณฑ์', true);
 
@@ -819,7 +823,7 @@ window.searchAssetHistory = async function() {
     try {
         const res = await fetch('/api/asset_history.php?code=' + encodeURIComponent(code));
         const json = await res.json();
-        
+
         if (loader) loader.classList.add('hidden');
 
         if (json.success) {
@@ -906,9 +910,9 @@ function renderAssetHistory(data) {
     }
 }
 
-window.deleteTicket = async function(id) {
+window.deleteTicket = async function (id) {
     if (!confirm('คุณยืนยันที่จะลบรายการแจ้งซ่อมนี้ใช่หรือไม่?')) return;
-    
+
     try {
         const res = await fetch('/api/tickets.php', {
             method: 'DELETE',
@@ -926,7 +930,7 @@ window.deleteTicket = async function(id) {
         } else {
             showToast('❌ ' + (json.error || 'ไม่สามารถลบได้'), true);
         }
-    } catch(e) {
+    } catch (e) {
         showToast('❌ เกิดข้อผิดพลาดในการลบ', true);
     }
 };
